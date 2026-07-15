@@ -1,0 +1,616 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Left-turn crashes after dark &mdash; Frisco, TX</title>
+<meta name="description" content="Left-turn crashes double after dark at Frisco's
+ signalised intersections. An analysis of TxDOT CRIS records for complete years 2016-2025.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --night:#0F1720; --ink:#16202B; --paper:#E9EBEE; --card:#FFFFFF;
+    --amber:#E8A33D;      /* permissive: the flashing yellow arrow */
+    --green:#3E8E5A;      /* protected: the green arrow */
+    --red:#C33C3C;        /* the crash */
+    --sky:#7FA8C9;        /* daylight */
+    --slate:#68737F; --rule:#D2D7DD;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+    --sans:"IBM Plex Sans",system-ui,-apple-system,sans-serif;
+  }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink);
+    font:400 16px/1.65 var(--sans); -webkit-font-smoothing:antialiased; }
+  .wrap { max-width:860px; margin:0 auto; padding:0 28px; }
+
+  /* ---- masthead ---- */
+  .top { background:var(--night); color:#DFE5EA; padding:34px 0 0; }
+  .top .wrap { display:flex; justify-content:space-between; align-items:baseline;
+    gap:20px; flex-wrap:wrap; }
+  .tag { font:500 11px/1 var(--mono); letter-spacing:.18em; text-transform:uppercase;
+    color:var(--amber); }
+  .src { font:400 12px/1 var(--mono); color:#7A8794; }
+
+  /* ---- the finding, on night ground ---- */
+  .hero { background:var(--night); color:#F2F5F7; padding:22px 0 46px; }
+  .hero h1 { font:600 clamp(30px,5vw,46px)/1.12 var(--mono); margin:14px 0 0;
+    letter-spacing:-.02em; max-width:17ch; }
+  .hero h1 em { font-style:normal; color:var(--amber); }
+  .hero .sub { color:#9FADB9; margin:18px 0 30px; max-width:60ch; font-size:17px; }
+  .figure { background:#16202B; border:1px solid #26333F; border-radius:4px;
+    padding:20px 16px 8px; }
+  .chart { width:100%; height:auto; display:block; }
+  .title { font:600 15px var(--sans); fill:#F2F5F7; }
+  .subtitle { font:400 11px var(--mono); fill:#9FADB9; letter-spacing:.02em; }
+  .axtitle { font:500 10px var(--mono); fill:#9FADB9; letter-spacing:.1em;
+    text-transform:uppercase; }
+  .band { fill:#E8A33D; opacity:.10; }
+  .bandlab { font:500 10px var(--mono); fill:var(--amber); letter-spacing:.08em;
+    text-transform:uppercase; }
+  .grid { stroke:#2B3945; stroke-width:1; }
+  .ax { font:400 10px var(--mono); fill:#7A8794; }
+  .line { fill:none; stroke-width:2.5; stroke-linejoin:round; stroke-linecap:round; }
+  .line.winter { stroke:var(--amber); }
+  .line.summer { stroke:var(--sky); }
+  .key { display:flex; gap:22px; font:400 12px var(--mono); color:#9FADB9;
+    padding:10px 4px 4px; }
+  .key i { display:inline-block; width:20px; height:2.5px; vertical-align:middle;
+    margin-right:7px; }
+
+  /* ---- body sections ---- */
+  .sec { padding:44px 0; border-bottom:1px solid var(--rule); }
+  .sec:last-of-type { border-bottom:0; }
+  h2 { font:600 24px/1.25 var(--sans); margin:0 0 16px; letter-spacing:-.01em; }
+  .eye { display:block; font:500 11px/1 var(--mono); letter-spacing:.16em;
+    text-transform:uppercase; color:var(--slate); margin-bottom:9px; }
+  p { margin:0 0 15px; max-width:66ch; }
+  .cap { font-size:14.5px; color:var(--slate); }
+  .lede { font-size:18px; }
+
+  .tab { width:100%; border-collapse:collapse; margin:18px 0; background:var(--card);
+    border:1px solid var(--rule); }
+  .tab th { font:500 11px/1 var(--mono); letter-spacing:.1em; text-transform:uppercase;
+    text-align:right; padding:11px 12px; background:var(--ink); color:#E9EBEE; }
+  .tab th:first-child { text-align:left; }
+  .tab .nowrap { white-space:nowrap; }
+  .tab td { padding:10px 12px; border-top:1px solid var(--rule); font-size:14.5px; }
+  .tab .m { font-family:var(--mono); font-size:13.5px; text-align:right;
+    font-variant-numeric:tabular-nums; }
+  .tab td:first-child { text-align:left; }
+  .tab .b { font-weight:600; }
+  .tab .dim { color:var(--slate); }
+  .tab .amber { color:#B87A18; font-weight:600; }
+  .tab .green { color:var(--green); }
+  .tab .red { color:var(--red); }
+  .tab .note { font-size:12.5px; color:var(--slate); font-style:italic; }
+  .tab tr.ctrl { background:#F4F1E9; }
+  .tab tr.ctrl .m { color:var(--slate); }
+
+  /* checks: each one could have killed the finding */
+  .checks { list-style:none; padding:0; margin:18px 0; }
+  .checks li { display:flex; gap:14px; padding:13px 0;
+    border-top:1px solid var(--rule); }
+  .checks li:last-child { border-bottom:1px solid var(--rule); }
+  .checks .mark { font:600 13px var(--mono); color:var(--green); flex:0 0 auto;
+    padding-top:2px; }
+  .checks b { font-weight:600; }
+  .checks .det { font:400 13px/1.5 var(--mono); color:var(--slate);
+    display:block; margin-top:3px; }
+
+  .warn { background:#FBF3E4; border-left:3px solid var(--amber);
+    padding:14px 16px; font-size:14.5px; max-width:66ch; }
+  .warn b { font-weight:600; }
+  .notclaim { background:var(--card); border:1px solid var(--rule);
+    padding:20px 22px; }
+  .notclaim h3 { font:600 15px var(--sans); margin:0 0 12px; }
+  .notclaim ul { margin:0; padding-left:18px; }
+  .notclaim li { margin-bottom:9px; font-size:14.5px; max-width:62ch; }
+
+  footer { background:var(--night); color:#8B98A5; padding:34px 0 44px;
+    font-size:14px; }
+  footer a { color:var(--amber); text-decoration:none; }
+  footer a:hover { text-decoration:underline; }
+  footer .wrap > p { max-width:66ch; }
+  a:focus-visible, summary:focus-visible { outline:2px solid var(--amber);
+    outline-offset:2px; }
+  @media (prefers-reduced-motion:no-preference) {
+    .line { stroke-dasharray:1400; stroke-dashoffset:1400;
+      animation:draw 1.5s .2s ease-out forwards; }
+    @keyframes draw { to { stroke-dashoffset:0; } }
+  }
+  @media (max-width:620px) {
+    .tab .note { display:none; }
+    .hero h1 { font-size:27px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="top"><div class="wrap">
+  <span class="tag">Frisco, TX &middot; signalised intersections</span>
+  <span class="src">Based on TxDOT CRIS &middot; 2016&ndash;2026</span>
+</div></div>
+
+<header class="hero"><div class="wrap">
+  <h1>Left-turn crashes roughly <em>double</em> after dark.</h1>
+  <p class="sub">Between 6 and 8pm, Frisco's signalised intersections recorded
+  161 left-turn crashes across all winter months and 79
+  across all summer months, combined over 2016&ndash;2025 &mdash; a rate ratio of
+  2.09 (95% CI 1.59&ndash;2.73), adjusted for the number of
+  days in each season. Those hours are dark in winter and light in summer.</p>
+
+  <div class="figure">
+    <svg viewBox="0 0 720 340" class="chart" role="img"
+   aria-label="Left-turn crash rate by hour of day, winter versus summer">
+  <text x="68" y="22" class="title">Left-turn crashes by hour of day</text>
+  <text x="68" y="40" class="subtitle">Frisco signalised intersections, 2016&ndash;2025</text>
+  <rect x="131.2" y="58" width="505.6" height="218" class="band"/>
+  <text x="384.0" y="73" class="bandlab" text-anchor="middle">
+    dark in winter, light in summer</text>
+  <line x1="68" y1="276.0" x2="700" y2="276.0" class="grid"/><text x="60" y="280.0" class="ax" text-anchor="end">0</text><line x1="68" y1="167.0" x2="700" y2="167.0" class="grid"/><text x="60" y="171.0" class="ax" text-anchor="end">39</text><line x1="68" y1="58.0" x2="700" y2="58.0" class="grid"/><text x="60" y="62.0" class="ax" text-anchor="end">78</text>
+  <path d="M68.0,108.3 L226.0,164.9 L384.0,208.0 L542.0,194.4 L700.0,142.3" class="line summer"/>
+  <path d="M68.0,141.5 L226.0,58.0 L384.0,120.6 L542.0,153.1 L700.0,190.2" class="line winter"/>
+  <circle cx="68.0" cy="141.5" r="3.5" fill="var(--amber)"/><circle cx="226.0" cy="58.0" r="3.5" fill="var(--amber)"/><circle cx="384.0" cy="120.6" r="3.5" fill="var(--amber)"/><circle cx="542.0" cy="153.1" r="3.5" fill="var(--amber)"/><circle cx="700.0" cy="190.2" r="3.5" fill="var(--amber)"/><circle cx="68.0" cy="108.3" r="3.5" fill="var(--sky)"/><circle cx="226.0" cy="164.9" r="3.5" fill="var(--sky)"/><circle cx="384.0" cy="208.0" r="3.5" fill="var(--sky)"/><circle cx="542.0" cy="194.4" r="3.5" fill="var(--sky)"/><circle cx="700.0" cy="142.3" r="3.5" fill="var(--sky)"/>
+  <text x="68.0" y="294" class="ax" text-anchor="middle">5pm</text><text x="226.0" y="294" class="ax" text-anchor="middle">6pm</text><text x="384.0" y="294" class="ax" text-anchor="middle">7pm</text><text x="542.0" y="294" class="ax" text-anchor="middle">8pm</text><text x="700.0" y="294" class="ax" text-anchor="middle">9pm</text>
+  <text transform="translate(26,167.0) rotate(-90)" text-anchor="middle" class="axtitle">crashes / 1,000 days</text>
+  <text x="384.0" y="326" class="axtitle" text-anchor="middle">Hour of day</text>
+</svg>
+    <div class="key">
+      <span><i style="background:var(--amber)"></i>winter (Nov&ndash;Feb)</span>
+      <span><i style="background:var(--sky)"></i>summer (May&ndash;Aug)</span>
+    </div>
+  </div>
+</div></header>
+
+<main class="wrap">
+
+  <section class="sec">
+    <h2><span class="eye">comparison</span>Hours with no darkness contrast show no
+    difference</h2>
+    <p class="lede">Sunset in Frisco falls around 5:25pm in December and 8:35pm in June.
+    At 5pm it is therefore light in both seasons, and at 5pm the seasonal difference is
+    absent &mdash; the winter rate is slightly lower than the summer rate.</p>
+    <p>The difference appears from 6pm and narrows again after 8pm, once both seasons are
+    dark. A seasonal factor unrelated to light &mdash; school-term traffic, holiday
+    driving, winter road conditions &mdash; would be expected to affect 5pm as well.</p>
+    <table class="tab">
+      <thead><tr>
+        <th>Hour</th><th>Winter</th><th>Summer</th>
+        <th>Left-turn</th><th>All crashes</th><th></th>
+      </tr></thead>
+      <tbody><tr class="ctrl">
+      <td class="m">5pm</td>
+      <td class="m">58</td>
+      <td class="m">74</td>
+      <td class="m b">0.80&times;</td>
+      <td class="m dim">0.89&times;</td>
+      <td class="note">light in both seasons</td>
+    </tr>
+<tr class="">
+      <td class="m">6pm</td>
+      <td class="m">94</td>
+      <td class="m">49</td>
+      <td class="m b">1.96&times;</td>
+      <td class="m dim">1.46&times;</td>
+      <td class="note"></td>
+    </tr>
+<tr class="">
+      <td class="m">7pm</td>
+      <td class="m">67</td>
+      <td class="m">30</td>
+      <td class="m b">2.29&times;</td>
+      <td class="m dim">1.58&times;</td>
+      <td class="note"></td>
+    </tr>
+<tr class="">
+      <td class="m">8pm</td>
+      <td class="m">53</td>
+      <td class="m">36</td>
+      <td class="m b">1.51&times;</td>
+      <td class="m dim">1.21&times;</td>
+      <td class="note"></td>
+    </tr>
+<tr class="">
+      <td class="m">9pm</td>
+      <td class="m">37</td>
+      <td class="m">59</td>
+      <td class="m b">0.64&times;</td>
+      <td class="m dim">0.82&times;</td>
+      <td class="note"></td>
+    </tr></tbody>
+    </table>
+    <p class="cap">Counts are left-turn crashes. Ratios compare winter with summer,
+    adjusted for the number of days in each season. Left-turn crashes rise
+    approximately twice as fast as crashes in general.</p>
+  </section>
+
+  <section class="sec">
+    <h2><span class="eye">robustness</span>Checks performed</h2>
+    <p>Each of the following would be expected to remove the difference if the stated
+    alternative explanation held. The observed difference persists in each case.</p>
+    <ul class="checks">
+      <li><span class="mark">&mdash;</span><div>
+        <b>Counts, not shares.</b> A proportion can rise while the underlying count
+        falls, if the denominator shrinks faster. Left-turn crashes were therefore
+        counted per calendar day rather than as a share. The count rises in winter, and
+        rises faster than the count of crashes overall.
+        <span class="det">6pm: 1.96&times;
+        left-turn vs 1.46&times; all crashes</span>
+      </div></li>
+      <li><span class="mark">&mdash;</span><div>
+        <b>Stratified by intersection.</b> If crashes after dark occurred at a different
+        set of intersections, the difference could reflect that mix rather than the
+        light. Pooling within intersections (Mantel&ndash;Haenszel), the association
+        remains.
+        <span class="det">odds ratio 1.50 across 39 intersections,
+        p&nbsp;&lt;&nbsp;0.001 &middot; 25/39 move the predicted way</span>
+      </div></li>
+      <li><span class="mark">&mdash;</span><div>
+        <b>Dry pavement only.</b> Winter is both darker and wetter. Restricting to dry
+        road surface leaves the difference unchanged.
+        <span class="det">dry only: +9.6 pp, p&nbsp;&lt;&nbsp;0.001</span>
+      </div></li>
+      <li><span class="mark">&mdash;</span><div>
+        <b>Right-turn comparison.</b> If night driving were generally more difficult,
+        other turning movements would be expected to shift similarly. Right-turn crashes
+        show no change.
+        <span class="det">left +9.6 pp &middot;
+        right -0.9 pp (n.s.) &middot;
+        right-angle -5.4 pp</span>
+      </div></li>
+    </ul>
+    <p class="cap">Excluding impaired-driver crashes leaves the difference at
+    +10.9 pp. Impairment is recorded in
+    3.9% of crashes in these hours.</p>
+  </section>
+
+  <section class="sec">
+    <h2><span class="eye">contributing factors</span>What the crash reports record</h2>
+    <p>A driver is required to yield only on a permissive left turn. Under a protected
+    left the turning driver has right of way, so a collision there would be recorded as a
+    disregarded signal rather than a failure to yield. The officer's contributing factor
+    therefore carries information about which phase was operating.</p>
+    <p>Crashes recorded at flashing-yellow-arrow control, which is permissive by
+    definition, provide a reference point:
+    <b>92%</b> cite failure to yield while
+    turning left. Across all left-turn crashes at signals the figure is
+    <b>64%</b>, compared with
+    18% citing a disregarded signal.</p>
+    <p>Within the 6&ndash;8pm window,
+    <b>66%</b> of left-turn crashes are
+    recorded as failure to yield while turning left and
+    14% as a disregarded signal. This is
+    consistent with permissive left-turn operation during those hours at the
+    intersections where the crashes occurred, though it is not a direct observation of
+    signal phasing.</p>
+    <h3 style="font:600 15px var(--sans);margin:26px 0 4px">By intersection</h3>
+    <p class="cap">Left-turn crashes after dark, 6&ndash;10pm. Left-turn phasing is
+    configured per intersection rather than city-wide.</p>
+    <table class="tab">
+      <thead><tr><th>Intersection</th><th>Crashes</th>
+        <th>Failed to yield</th><th>Ran signal</th></tr></thead>
+      <tbody><tr>
+      <td>PRESTON RD & SH121</td>
+      <td class="m">41</td>
+      <td class="m amber">61%</td>
+      <td class="m dim">17%</td>
+    </tr>
+<tr>
+      <td>ELDORADO PKWY & FM423</td>
+      <td class="m">30</td>
+      <td class="m amber">87%</td>
+      <td class="m dim">3%</td>
+    </tr>
+<tr>
+      <td>CUSTER RD & SH121</td>
+      <td class="m">25</td>
+      <td class="m amber">68%</td>
+      <td class="m dim">24%</td>
+    </tr>
+<tr>
+      <td>CUSTER RD & MAIN ST</td>
+      <td class="m">24</td>
+      <td class="m amber">88%</td>
+      <td class="m dim">8%</td>
+    </tr>
+<tr>
+      <td>PRESTON RD & US380</td>
+      <td class="m">24</td>
+      <td class="m amber">62%</td>
+      <td class="m dim">12%</td>
+    </tr>
+<tr>
+      <td>ELDORADO PKWY & INDEPENDENCE PKWY</td>
+      <td class="m">12</td>
+      <td class="m amber">83%</td>
+      <td class="m dim">0%</td>
+    </tr>
+<tr>
+      <td>LEGACY DR & MAIN ST</td>
+      <td class="m">11</td>
+      <td class="m amber">55%</td>
+      <td class="m dim">27%</td>
+    </tr>
+<tr>
+      <td>LEGACY DR & STONEBROOK PKWY</td>
+      <td class="m">9</td>
+      <td class="m amber">56%</td>
+      <td class="m dim">22%</td>
+    </tr>
+<tr>
+      <td>PARKWOOD BLVD & SH121</td>
+      <td class="m">9</td>
+      <td class="m amber">44%</td>
+      <td class="m dim">11%</td>
+    </tr>
+<tr>
+      <td>ELDORADO PKWY & TEEL PKWY</td>
+      <td class="m">8</td>
+      <td class="m amber">62%</td>
+      <td class="m dim">38%</td>
+    </tr>
+<tr>
+      <td>FM423 & FM720</td>
+      <td class="m">8</td>
+      <td class="m amber">62%</td>
+      <td class="m dim">12%</td>
+    </tr>
+<tr>
+      <td>FM423 & US380</td>
+      <td class="m">8</td>
+      <td class="m amber">75%</td>
+      <td class="m dim">12%</td>
+    </tr></tbody>
+    </table>
+  </section>
+
+  <section class="sec">
+    <h2><span class="eye">limitations</span>What this analysis does not establish</h2>
+    <div class="notclaim">
+      <h3>These bound the interpretation of everything above.</h3>
+      <ul>
+        <li><b>The difference is not shown to be confined to permissive intersections.</b>
+        Intersections were classified by how permissive their crash records appear and
+        the two groups compared; the difference between them is not statistically
+        distinguishable (p&nbsp;=&nbsp;0.53). The
+        classification is also limited by construction: an intersection running
+        protected-only left turns produces few left-turn crashes, so it rarely meets the
+        minimum needed to be classified at all. The comparison is closer to "more
+        permissive" against "less permissive" than to permissive against protected.</li>
+        <li><b>Signal phasing was not observed.</b> The interpretation above rests on
+        contributing factors recorded by officers, not on the signal timing plans
+        themselves. If protected phasing already tracks sunset at these intersections,
+        that interpretation does not hold, although the seasonal difference in crashes
+        would remain to be explained.</li>
+        <li><b>Exposure is unknown.</b> The number of left turns attempted after dark is
+        not available. Traffic volumes are lower at night, so fewer left turns are likely
+        being made while more left-turn crashes are recorded. The risk per turn attempted
+        would then be higher than these figures indicate, making the estimates
+        conservative.</li>
+        <li><b>Reportable crashes only.</b> CRIS contains crashes for which an officer
+        filed a CR-3: injury, death, or $1,000+ in property damage. Minor crashes and
+        those without police response are not included.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section class="sec">
+    <h2><span class="eye">also in the data</span>What a new signal changes</h2>
+    <p>Frisco installed signals at following 15 intersections during the
+    study window, on dates published in city bulletins.</p>
+
+    <h3 style="font:600 15px var(--sans);margin:26px 0 4px">By intersection</h3>
+    <p class="cap">Crashes per year, before &rarr; after installation. The buffer around
+    each install date (construction, driver adjustment) is excluded from both periods.
+    Individual sites cover a small number of years and single-site rates are noisy; the
+    combined result below pools all 15 sites for statistical power.</p>
+    <table class="tab">
+      <thead><tr>
+        <th>Intersection</th><th>Installed</th><th>Years of data (pre/post)</th>
+        <th>All crashes/yr</th><th>Right-angle/yr</th><th>Rear-end/yr</th>
+        <th>Left-turn/yr</th>
+      </tr></thead>
+      <tbody><tr>
+      <td>OHIO DR & STONE CREST RD</td>
+      <td class="m nowrap">2022-10-27</td>
+      <td class="m dim">6.7 / 3.0</td>
+      <td class="m">6.3 &rarr; 3.6</td>
+      <td class="m">3.5 &rarr; 1.0</td>
+      <td class="m">0.2 &rarr; 0.3</td>
+      <td class="m">2.3 &rarr; 1.7</td>
+    </tr>
+<tr>
+      <td>ROLLING BROOK DR & STONEBROOK PKWY</td>
+      <td class="m nowrap">2022-12-01</td>
+      <td class="m dim">6.7 / 2.9</td>
+      <td class="m">4.0 &rarr; 1.7</td>
+      <td class="m">2.1 &rarr; 0.0</td>
+      <td class="m">0.0 &rarr; 0.0</td>
+      <td class="m">1.2 &rarr; 0.3</td>
+    </tr>
+<tr>
+      <td>FM423 & ROCKHILL PKWY</td>
+      <td class="m nowrap">2019-08-06</td>
+      <td class="m dim">3.4 / 6.2</td>
+      <td class="m">5.8 &rarr; 2.9</td>
+      <td class="m">4.1 &rarr; 0.2</td>
+      <td class="m">0.6 &rarr; 1.3</td>
+      <td class="m">0.6 &rarr; 1.3</td>
+    </tr>
+<tr>
+      <td>LEGACY DR & THRONE HALL DR</td>
+      <td class="m nowrap">2020-06-11</td>
+      <td class="m dim">4.3 / 5.4</td>
+      <td class="m">2.6 &rarr; 3.3</td>
+      <td class="m">1.2 &rarr; 0.4</td>
+      <td class="m">0.0 &rarr; 0.0</td>
+      <td class="m">0.9 &rarr; 2.6</td>
+    </tr>
+<tr>
+      <td>LEGACY DR & VENETO DR</td>
+      <td class="m nowrap">2018-02-01</td>
+      <td class="m dim">1.9 / 7.7</td>
+      <td class="m">5.7 &rarr; 2.1</td>
+      <td class="m">3.6 &rarr; 0.9</td>
+      <td class="m">0.0 &rarr; 0.1</td>
+      <td class="m">2.1 &rarr; 0.6</td>
+    </tr>
+<tr>
+      <td>S TEEL PKWY & US380</td>
+      <td class="m nowrap">2020-04-29</td>
+      <td class="m dim">4.2 / 5.5</td>
+      <td class="m">2.6 &rarr; 2.4</td>
+      <td class="m">0.5 &rarr; 0.0</td>
+      <td class="m">0.2 &rarr; 1.3</td>
+      <td class="m">1.2 &rarr; 0.2</td>
+    </tr>
+<tr>
+      <td>TEEL PKWY & TIMBER RIDGE DR</td>
+      <td class="m nowrap">2019-06-01</td>
+      <td class="m dim">3.2 / 6.4</td>
+      <td class="m">3.4 &rarr; 0.5</td>
+      <td class="m">0.9 &rarr; 0.3</td>
+      <td class="m">0.6 &rarr; 0.0</td>
+      <td class="m">0.6 &rarr; 0.2</td>
+    </tr>
+<tr>
+      <td>INDEPENDENCE PKWY & LEBANON RD</td>
+      <td class="m nowrap">2021-09-23</td>
+      <td class="m dim">5.6 / 4.1</td>
+      <td class="m">1.6 &rarr; 2.2</td>
+      <td class="m">1.1 &rarr; 0.7</td>
+      <td class="m">0.2 &rarr; 1.0</td>
+      <td class="m">0.4 &rarr; 0.5</td>
+    </tr>
+<tr>
+      <td>COIT RD & LYNDHURST DR</td>
+      <td class="m nowrap">2021-04-05</td>
+      <td class="m dim">5.1 / 4.6</td>
+      <td class="m">1.8 &rarr; 1.7</td>
+      <td class="m">0.8 &rarr; 0.0</td>
+      <td class="m">0.0 &rarr; 0.7</td>
+      <td class="m">0.6 &rarr; 0.7</td>
+    </tr>
+<tr>
+      <td>COTTON GIN RD & LEGACY DR</td>
+      <td class="m nowrap">2017-04-01</td>
+      <td class="m dim">1.1 / 8.6</td>
+      <td class="m">7.4 &rarr; 1.5</td>
+      <td class="m">6.5 &rarr; 0.2</td>
+      <td class="m">0.0 &rarr; 0.3</td>
+      <td class="m">0.9 &rarr; 0.7</td>
+    </tr>
+<tr>
+      <td>ELDORADO PKWY & GRAYHAWK BLVD</td>
+      <td class="m nowrap">2017-09-29</td>
+      <td class="m dim">1.6 / 8.1</td>
+      <td class="m">3.8 &rarr; 0.6</td>
+      <td class="m">0.6 &rarr; 0.0</td>
+      <td class="m">0.0 &rarr; 0.4</td>
+      <td class="m">2.5 &rarr; 0.1</td>
+    </tr>
+<tr>
+      <td>MAIN ST & MAJESTIC GARDENS DR</td>
+      <td class="m nowrap">2019-07-18</td>
+      <td class="m dim">3.4 / 6.3</td>
+      <td class="m">1.2 &rarr; 1.6</td>
+      <td class="m">0.6 &rarr; 0.0</td>
+      <td class="m">0.0 &rarr; 0.6</td>
+      <td class="m">0.6 &rarr; 0.5</td>
+    </tr>
+<tr>
+      <td>AVE OF THE STARS & GAYLORD PKWY</td>
+      <td class="m nowrap">2018-06-01</td>
+      <td class="m dim">2.2 / 7.4</td>
+      <td class="m">1.8 &rarr; 0.9</td>
+      <td class="m">0.9 &rarr; 0.4</td>
+      <td class="m">0.0 &rarr; 0.1</td>
+      <td class="m">0.4 &rarr; 0.3</td>
+    </tr>
+<tr>
+      <td>LONE STAR RANCH PKWY & STONEBROOK PKWY</td>
+      <td class="m nowrap">2021-09-09</td>
+      <td class="m dim">5.5 / 4.1</td>
+      <td class="m">0.5 &rarr; 1.0</td>
+      <td class="m">0.0 &rarr; 0.0</td>
+      <td class="m">0.0 &rarr; 0.0</td>
+      <td class="m">0.0 &rarr; 0.0</td>
+    </tr>
+<tr>
+      <td>HILLCREST RD & PANTHER CREEK PKWY</td>
+      <td class="m nowrap">2020-07-14</td>
+      <td class="m dim">4.4 / 5.3</td>
+      <td class="m">0.5 &rarr; 1.7</td>
+      <td class="m">0.5 &rarr; 0.8</td>
+      <td class="m">0.0 &rarr; 0.0</td>
+      <td class="m">0.0 &rarr; 0.6</td>
+    </tr></tbody>
+    </table>
+
+    <h3 style="font:600 15px var(--sans);margin:30px 0 4px">Combined, all 15 sites</h3>
+    <p class="cap">Comparing crashes before and after, as rates rather than shares:</p>
+    <table class="tab">
+      <thead><tr><th>Crash type</th><th>Before</th><th>After</th><th>Change</th></tr></thead>
+      <tbody>
+        <tr><td>Right-angle</td><td class="m">1.55/yr</td>
+            <td class="m">0.31/yr</td>
+            <td class="m green b">-80%</td></tr>
+        <tr><td>Rear-end</td><td class="m">0.12/yr</td>
+            <td class="m">0.41/yr</td>
+            <td class="m red b">+245%</td></tr>
+        <tr><td>Left-turn</td><td class="m">0.89/yr</td>
+            <td class="m">0.64/yr</td>
+            <td class="m">-28%</td></tr>
+      </tbody>
+    </table>
+    <p class="cap">This is the trade-off signalisation is expected to produce: a signal
+    separates conflicting movements in time, so right-angle crashes fall, and it creates
+    queues, so rear-end crashes rise. Rates are reported rather than shares; the
+    left-turn rate falls even though the left-turn share rises, because total crashes
+    fall faster.</p>
+    <p class="warn"><b>Not an estimate of crash reduction.</b> Signals tend to be
+    installed where crashes have recently increased, so some subsequent decline would be
+    expected regardless (regression to the mean). The change in crash <em>type</em> is
+    not explained by that mechanism, which would move all types in the same direction.
+    No overall frequency effect is reported.</p>
+    <p class="cap">Individual intersections above should not be read as independent
+    confirmations &mdash; each has few years of data on one or both sides of its install
+    date, so single-site rates carry wide uncertainty. The combined table is the reliable
+    figure; the by-intersection table shows where that figure comes from.</p>
+  </section>
+  <section class="sec">
+    <h2><span class="eye">method</span>How the data was cut</h2>
+    <p>All crash records held by TxDOT for Frisco, 2016&ndash;2025, narrowed to those
+    that can be placed at a named intersection at a known time.</p>
+    <table class="tab">
+      <thead><tr><th>Records</th><th>Step</th></tr></thead>
+      <tbody><tr><td class="m">28,342</td><td>CRIS export</td></tr>
+<tr><td class="m">13,358</td><td>at or related to an intersection</td></tr>
+<tr><td class="m">12,847</td><td>both street names present</td></tr>
+<tr><td class="m">12,847</td><td>time and date parse</td></tr>
+<tr><td class="m">12,195</td><td>on or before 2025-12-31 (complete reporting)</td></tr></tbody>
+    </table>
+    <p class="cap">Freeway mainlane crashes are excluded: none carry a cross street,
+    and their crash-type distribution is characteristic of a freeway rather than an
+    intersection. Driveway-access crashes are held out as a separate category. The
+    analyses above use the signalised subset, since left-turn phasing exists only at a
+    signal.</p>
+    <p class="cap">Dawn and dusk are excluded from both the dark and daylight groups, as
+    they represent the transition between the two conditions being compared.</p>
+    <p><a href="https://github.com/mbahety/frisco-crash-analysis" style="color:#B87A18;font-weight:600;">Code, data and
+    full method &rarr;</a></p>
+  </section>
+
+</main>
+
+<footer><div class="wrap">
+  <p>An independent analysis of public TxDOT CRIS crash records. Not affiliated with
+  the City of Frisco or TxDOT. Any errors are the author&rsquo;s.</p>
+  <p style="margin-top:14px"><a href="https://github.com/mbahety/frisco-crash-analysis">Repository</a> &middot;
+  <a href="https://cris.dot.state.tx.us/public/Query/app/home">CRIS data source</a></p>
+</div></footer>
+
+</body>
+</html>

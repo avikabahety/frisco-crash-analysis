@@ -1,0 +1,11 @@
+# The CRIS export is large and regenerable from TxDOT. Do not commit it.
+data/*.csv
+!data/signal_installations.csv
+
+# Generated on each run
+output/
+__pycache__/
+*.pyc
+.DS_Store
+.vscode/
+.ipynb_checkpoints/
