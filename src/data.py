@@ -52,8 +52,7 @@ def intersection_key(a, b):
 
 
 def parse_hour(series):
-    """CRIS stores time as HHMM ('1745'). Parsing that as a date yields the YEAR
-    1745, i.e. hour 0, which silently destroys every time-of-day analysis. Handle
+    """CRIS stores time as HHMM ('1745'). Handle
     HHMM, HH:MM and AM/PM explicitly."""
     s = series.astype(str).str.strip().str.upper()
     hour = pd.Series(np.nan, index=s.index, dtype="float")
@@ -91,7 +90,7 @@ def _severity(value):
 def load(path=None, verbose=True):
     """Return the analysis frame and a record of the filter funnel.
 
-    The frame contains every intersection crash. Individual analyses narrow further
+    The dataframe contains every intersection crash. Individual analyses narrow further
     (e.g. to signalised intersections) from this common base.
     """
     path = path or C.CRASH_FILE

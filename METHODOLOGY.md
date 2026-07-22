@@ -2,20 +2,20 @@
 
 ## Fields used
 
-The CRIS export carries 142 columns. Fourteen are used. Run `python analyze.py --inspect`
-to print your export's header and confirm each one is present — CRIS field names vary
-between export versions, and a silently missing column is worse than a loud error.
+The CRIS export carries 142 columns, out of which 14 are used. Run `python analyze.py --inspect`
+to print your export's header and confirm each one is present — CRIS field names may vary
+between export versions.
 
 | CRIS column | Used for |
 |---|---|
 | `Crash ID` | Record identity; confirms one row per crash |
 | `Crash Date` | Year, month, season. Also the before/after split for signal installations |
-| `Crash Time` | Hour of day. **Stored as `HHMM`** — see the parsing note below |
+| `Crash Time` | Hour of day. **Stored as `HHMM`** |
 | `Street Name` | Intersection identity (first street) |
 | `Intersecting Street Name` | Intersection identity (second street) |
 | `Intersection Related` | The scope filter: intersection vs freeway mainlane vs driveway |
 | `Manner of Collision` | Crash type: left-turn, right-turn, right-angle, rear-end |
-| `Light Condition` | **Dark vs daylight — the independent variable of the whole analysis** |
+| `Light Condition` | Dark vs daylight — the independent variable of the analysis |
 | `Traffic Control Type` | Restricts to signalised intersections; identifies flashing-yellow control |
 | `Contributing Factors` | Permissive vs protected fingerprint; impaired-driver flag |
 | `Surface Condition` | The dry-pavement-only robustness check |
@@ -31,10 +31,9 @@ between export versions, and a silently missing column is worse than a loud erro
   approach crashes, including the queue rear-ends that signalisation actually causes.
 - **`Latitude`/`Longitude` as the clustering key.** Coordinates are genuine GPS (90%
   carry 8 decimal places; 86.6% of distinct points are used by a single crash), but
-  clustering on them alone chains freeway crashes into corridor-length blobs — one
-  reached 4,413 crashes spanning kilometres. The normalised street-name pair is the key
-  instead; coordinates are kept for mapping.
-- **`Number of Lanes`, `Median Type`, `Median Width`** — ~30% populated, on-system only.
+  clustering on them alone chains freeway crashes into corridor-length blobs. The 
+  normalised street-name pair is the key instead; coordinates are kept for mapping.
+- **`Number of Lanes`, `Median Type`, `Median Width`** — ~30% populated, too sparse.
 
 ## Data
 
@@ -44,16 +43,15 @@ with all attributes. The extract covers crash years 2016–2026 and was pulled o
 
 CRIS holds **reportable crashes only**: those an officer filed on a CR-3 form, required
 when a crash causes injury, death, or $1,000+ in property damage. Minor crashes and
-crashes with no police response are absent. Injury and fatal crashes are close to
-complete; low-severity crashes are undercounted.
+crashes with no police response are absent. 
 
 **Analysis is restricted to complete calendar years 2016–2025.** A crash enters CRIS only
 after an officer files a CR-3 and TxDOT processes it, so the final months before any
-extract date are under-reported. This is not neutral here: the analysis compares winter
+extract date are under-reported. The analysis compares winter
 (Nov–Feb) against summer (May–Aug), and a mid-year extract truncates summer closer to the
 present than winter, so an incomplete tail would undercount summer and inflate the
-winter/summer ratio — biasing the headline result in the direction it already points. The
-partial 2026 data is therefore excluded rather than trusted. The cutoff is
+winter/summer ratio. The
+partial 2026 data is therefore excluded. The cutoff is
 `config.ANALYSIS_END`; `check_completeness.py` compares recent months against their
 historical levels to confirm where reporting has settled.
 
@@ -61,10 +59,10 @@ historical levels to confirm where reporting has settled.
 
 | Step | Why |
 |---|---|
-| `Intersection Related` ∈ {INTERSECTION, INTERSECTION RELATED} | Keeps crashes at an intersection *and* on its approach. Approach crashes (queue rear-ends, dilemma-zone crashes) are intersection failures occurring 150ft upstream, and `At Intersection Flag` would drop ~3,700 of them. |
-| Exclude `NON INTERSECTION` | Freeway mainlane. **Zero of 12,162 carry a cross street**, and their crash-type signature is a freeway's: single-vehicle, rear-end, sideswipe, with right-angle crashes at 2.6% against 15% city-wide. |
-| Exclude `DRIVEWAY ACCESS` | A real problem (access management) but a different one. Held out rather than mixed in. |
-| Both street names present, no self-pairs | An intersection needs an identity. `LEGACY DR & LEGACY DR` is an artifact. |
+| `Intersection Related` ∈ {INTERSECTION, INTERSECTION RELATED} | Keeps crashes at an intersection *and* on its approach. Approach crashes (queue rear-ends, dilemma-zone crashes) are intersection failures occurring 150ft upstream, and using `At Intersection Flag` field would drop ~3,700 of them. |
+| Exclude `NON INTERSECTION` | Freeway mainlane. Zero of 12,162 carry a cross street, and their crash-type signature is a freeway's: single-vehicle, rear-end, sideswipe, with right-angle crashes at 2.6% against 15% city-wide. |
+| Exclude `DRIVEWAY ACCESS` | A real problem (access management) but a different one. Excluded. |
+| Both street names present, no self-pairs | An intersection needs an identity. `LEGACY DR & LEGACY DR` is a data entry artifact. |
 | Signalised only, for the main analyses | Left-turn phasing only exists at a signal. |
 
 **Intersection identity** is the normalised, order-independent street-name pair. Street
@@ -104,8 +102,7 @@ Frisco's sunset moves from ~17:25 in December to ~20:35 in June. Therefore:
 - **18:00–19:00** — dark in winter, light in summer. Maximum contrast.
 - **21:00+** — dark in both seasons. No contrast, so untestable.
 
-Dawn and dusk are excluded from both groups, as they represent the transition between the
-two conditions being compared.
+Crashes coded DAWN or DUSK in `Light Condition` field are excluded from both groups, as they represent the transition between the two conditions being compared.
 
 ### Robustness checks
 
@@ -126,7 +123,8 @@ test across strata is reported alongside.
 **4. Right-turn comparison.** If night driving were generally more difficult, other
 turning movements would be expected to shift similarly.
 
-Impaired-driver crashes are excluded as a further check.
+**5. Impaired drivers.** If the darkness effect were alcohol-related rather than a visibility effect, removing impaired-driver crashes should reduce or eliminate it. The difference is unchanged.
+
 
 ### Excess crashes
 
@@ -195,8 +193,8 @@ calibrated safety performance function.
 
 - **Reportable crashes only** (CR-3 threshold).
 - **No exposure data.** CRIS ADT is populated on only ~30% of records (on-system roads).
-  Frisco's GIS traffic-volume layer would supply this.
-- **Signal timings unknown.** The countermeasure is inferred, not verified.
+  Frisco's GIS traffic-volume layer may provide this data.
+- **Signal timings unknown.** The analysis is not informed by signal timings when intersections switch between protected and permissive left turns. 
 - **Hours dark year-round (21:00+) cannot be tested** — there is no daylight
   counterfactual at 10pm.
 - **Contributing factors are officer-coded** and carry the usual reporting variability.

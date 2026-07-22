@@ -171,7 +171,7 @@ def render(dark, mech, sig, funnel, path=None):
     fall faster.</p>
     <p class="warn"><b>Not an estimate of crash reduction.</b> Signals tend to be
     installed where crashes have recently increased, so some subsequent decline would be
-    expected regardless (regression to the mean). The change in crash <em>type</em> is
+    expected regardless. The change in crash <em>type</em> is
     not explained by that mechanism, which would move all types in the same direction.
     No overall frequency effect is reported.</p>
     <p class="cap">Individual intersections above should not be read as independent
@@ -315,7 +315,7 @@ def render(dark, mech, sig, funnel, path=None):
 
 <div class="top"><div class="wrap">
   <span class="tag">Frisco, TX &middot; signalised intersections</span>
-  <span class="src">Based on TxDOT CRIS &middot; 2016&ndash;2026</span>
+  <span class="src">Based on TxDOT CRIS &middot; {span}</span>
 </div></div>
 
 <header class="hero"><div class="wrap">

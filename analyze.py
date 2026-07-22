@@ -150,14 +150,61 @@ def main():
     (frequency change is NOT reported: regression to the mean)""")
 
     # ---- artifacts --------------------------------------------------------
+
+    # hourly.csv — one row per hour. Columns:
+    #
+    # hour               clock hour (0-23)
+    # winter_left        raw left-turn crash count, winter months (Nov-Feb)
+    # summer_left        raw left-turn crash count, summer months (May-Aug)
+    # winter_all         raw total crash count, winter months
+    # summer_all         raw total crash count, summer months
+    # winter_left_rate   left-turn crashes per 1,000 winter calendar days
+    # summer_left_rate   left-turn crashes per 1,000 summer calendar days
+    # winter_all_rate    all crashes per 1,000 winter calendar days
+    # summer_all_rate    all crashes per 1,000 summer calendar days
+    # left_ratio         winter/summer rate ratio for left-turn crashes
+    # left_lo            95% CI lower bound for left_ratio (Poisson)
+    # left_hi            95% CI upper bound for left_ratio (Poisson)
+    # all_ratio          winter/summer rate ratio for all crashes at this hour
+    # is_control         True for hour 17 (light in both seasons; no darkness contrast)
     pd.DataFrame([
         {"hour": k, **{kk: vv for kk, vv in v.items()}}
         for k, v in sorted(dark["by_hour"].items())
     ]).to_csv(C.OUTPUT_DIR / "hourly.csv", index=False)
 
+    # intersections.csv — one row per intersection with at least 4 dark evening
+    # left-turn crashes (hours 18-21). Drawn from the mechanism analysis. Columns:
+    #
+    # intersection         normalised street-name pair (e.g. PRESTON RD & SH121)
+    # crashes              dark evening left-turn crash count at this intersection
+    # failed_to_yield_pct  % coded "failed to yield right of way - turning left"
+    #                      (signature of a permissive left-turn phase)
+    # ran_red_pct          % coded "disregarded stop and go signal"
+    #                      (signature of a protected phase or red-light running)
     pd.DataFrame(mech["sites"]).to_csv(C.OUTPUT_DIR / "intersections.csv", index=False)
 
     if sig.get("available"):
+        # signalisation.csv — one row per intersection with a known signal installation
+        # date, at least 1 year of crash data on both sides of the install, and a 60-day
+        # buffer excluded around the install date (construction, driver adjustment).
+        # Drawn from the before/after signalisation analysis. Columns:
+        #
+        # intersection       normalised street-name pair
+        # installed          date the signal became operational
+        # n_pre              raw crash count before installation
+        # n_post             raw crash count after installation
+        # years_pre          years of data before installation (after buffer exclusion)
+        # years_post         years of data after installation (after buffer exclusion)
+        # angle_pre          right-angle crash share before (%) — expected to fall
+        # angle_post         right-angle crash share after (%)
+        # angle_rate_pre     right-angle crashes per year before
+        # angle_rate_post    right-angle crashes per year after
+        # rear_rate_pre      rear-end crashes per year before — expected to rise
+        # rear_rate_post     rear-end crashes per year after
+        # left_rate_pre      left-turn crashes per year before
+        # left_rate_post     left-turn crashes per year after
+        # total_rate_pre     all crashes per year before
+        # total_rate_post    all crashes per year after
         pd.DataFrame(sig["sites"]).to_csv(
             C.OUTPUT_DIR / "signalisation.csv", index=False)
 

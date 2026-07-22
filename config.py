@@ -21,13 +21,11 @@ INSTALL_FILE = DATA_DIR / "signal_installations.csv"
 
 # ------------------------------------------------------- reporting completeness
 # A crash enters CRIS only after an officer files a CR-3 and TxDOT processes it, so
-# the most recent months of any extract are incomplete. This matters here because
-# the incomplete tail is asymmetric across the seasons being compared: an extract
+# the most recent months of any extract are incomplete. An extract
 # taken in July 2026 includes a near-complete Jan-Feb (winter) but only a partial,
-# under-reported May-Jul (summer). That undercounts summer and inflates the
-# winter/summer ratio -- biasing the headline result upward. Analysis is therefore
+# under-reported May-Jul (summer). Analysis is therefore
 # truncated to complete calendar years. Move this forward when a newer extract is
-# pulled; run `python check_completeness.py` to see where reporting has settled.
+# pulled; Run `python check_completeness.py` to see where reporting has settled.
 ANALYSIS_END = "2025-12-31"
 
 # ------------------------------------------------------------------- CRIS map
@@ -64,11 +62,10 @@ SEVERITY = {"K": "K", "A": "A", "B": "B", "C": "C", "N": "O", "O": "O", "99": "O
 # Source: City of Frisco, Related Agencies / Streets
 # (https://www.friscotexas.gov/420/Related-Agencies)
 #
-# Canonicalised to the LOCAL name, because that is what residents, city staff and
-# traffic engineers actually use: "Eldorado Pkwy & Custer Rd" beats "FM2934 & FM2478".
+# Canonicalised to the LOCAL name: "Eldorado Pkwy & Custer Rd" beats "FM2934 & FM2478".
 #
 # Deliberately NOT merged: Dallas Pkwy and Dallas North Tollway are different roads
-# (frontage road vs tollway mainlane), and merging them would fabricate intersections.
+# (frontage road vs tollway mainlane).
 #
 # Run `python check_aliases.py` to look for further aliases: it flags any two street
 # names whose crashes sit on top of each other geographically.
@@ -110,5 +107,5 @@ MIN_YEARS = 1.0       # minimum coverage before and after for a site to be inclu
 
 # ------------------------------------------------------------------- reporting
 SITE_TITLE = "Left-turn crashes after dark"
-SITE_SUBTITLE = "Frisco, TX \u00b7 TxDOT CRIS crash records, 2016\u20132026"
+SITE_SUBTITLE = "Frisco, TX \u00b7 TxDOT CRIS crash records, 2016\u20132025"
 REPO_URL = "https://github.com/mbahety/frisco-crash-analysis"
