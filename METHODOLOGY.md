@@ -1,10 +1,54 @@
 # Methodology
 
+## Data
+
+[TxDOT Crash Records Information System (CRIS)](https://cris.dot.state.tx.us/public/Query/app/home),
+City of Frisco, exported at crash level with all attributes. The extract covers crash
+years 2016–2026 and was pulled on 13 July 2026.
+
+[CRIS](https://cris.dot.state.tx.us/public/Query/app/home) holds **reportable crashes
+only**: those an officer filed on a CR-3 form, required when a crash causes injury,
+death, or $1,000+ in property damage. Minor crashes and crashes with no police response
+are absent.
+
+**Analysis is restricted to complete calendar years 2016–2025.** A crash enters
+[CRIS](https://cris.dot.state.tx.us/public/Query/app/home) only after an officer files
+a CR-3 and TxDOT processes it, so the data entry for final months may be incomplete. 
+Thus the partial 2026 datais excluded. The cutoff date is `config.ANALYSIS_END`; `check_completeness.py`
+compares recent months against their historical levels to confirm where reporting has
+settled.
+
+## Population
+
+| Step | Why |
+|---|---|
+| `Intersection Related` ∈ {INTERSECTION, INTERSECTION RELATED} | Keeps crashes at an intersection *and* on its approach. Approach crashes (queue rear-ends, dilemma-zone crashes) are intersection failures occurring 150ft upstream, and using the `At Intersection Flag` field would drop ~3,700 of those approach crashes. Thus a design choice was made to use `Intersection Related` field. |
+| Exclude `NON INTERSECTION` | Freeway mainlane. Zero of 12,162 carry a cross street, and their crash-type signature is a freeway's: single-vehicle, rear-end, sideswipe, with right-angle crashes at 2.6% against 15% city-wide. |
+| Exclude `DRIVEWAY ACCESS` | Excluded. |
+| Both street names present, no self-pairs | An intersection requires two distinct street names. Isolated records where both fields carry the same name (e.g. `LEGACY DR & LEGACY DR`) are excluded as malformed. |
+| Signalised only, for the main analyses | Left-turn phasing only exists at a signal. |
+
+**Intersection identity** is the normalised, order-independent street-name pair. Street
+names are canonicalised before pairing: route numbers are standardised (`SH 121`,
+`SH-121`, `SH0121` → `SH121`), suffixes are standardised (`MAIN STREET` → `MAIN ST`), and
+routes carrying a local name are resolved to that name (FM 2934 → Eldorado Pkwy,
+FM 3537 → Main St, FM 2478 → Custer Rd, SH 289 → Preston Rd), since officers record the
+same road under either designation. Dallas Pkwy and the Dallas North Tollway are distinct
+roads and are not combined.
+
+Pooled results — the rate ratio, the dark/daylight comparison, the robustness checks and
+the comparison hour — are computed across all signalised crashes and do not depend on how
+crashes are keyed to intersections.
+
+Record counts at each filter step are shown in the [results page](https://mbahety.github.io/frisco-crash-analysis/)
+under "How the data was cut".
+
 ## Fields used
 
-The CRIS export carries 142 columns, out of which 13 are used. Run `python analyze.py --inspect`
-to print your export's header and confirm each one is present — CRIS field names may vary
-between export versions.
+The [CRIS](https://cris.dot.state.tx.us/public/Query/app/home) export carries 142
+columns, out of which 11 are used. Run `python analyze.py --inspect` to print your
+export's header and confirm each one is present — CRIS field names may vary between
+export versions.
 
 | CRIS column | Used for |
 |---|---|
@@ -19,7 +63,6 @@ between export versions.
 | `Traffic Control Type` | Restricts to signalised intersections; identifies flashing-yellow control |
 | `Contributing Factors` | Permissive vs protected fingerprint; impaired-driver flag |
 | `Surface Condition` | The dry-pavement-only robustness check |
-| `Latitude`, `Longitude` | Mapping only. **Not** the intersection key — see below |
 
 ### Fields deliberately not used
 
@@ -28,58 +71,10 @@ between export versions.
   traffic-volume layer would be the source if exposure is ever added.
 - **`At Intersection Flag`** is narrower than `Intersection Related` and drops ~3,700
   approach crashes, including queue rear-ends on approaches.
-- **`Latitude`/`Longitude` as the clustering key.** Coordinates are genuine GPS (90%
-  carry 8 decimal places; 86.6% of distinct points are used by a single crash), but
-  clustering on them alone chains freeway crashes into corridor-length blobs. The 
-  normalised street-name pair is the key instead; coordinates are kept for mapping.
 - **`Number of Lanes`, `Median Type`, `Median Width`** — ~30% populated, too sparse.
-
-## Data
-
-TxDOT Crash Records Information System (CRIS), City of Frisco, exported at crash level
-with all attributes. The extract covers crash years 2016–2026 and was pulled on
-13 July 2026.
-
-CRIS holds **reportable crashes only**: those an officer filed on a CR-3 form, required
-when a crash causes injury, death, or $1,000+ in property damage. Minor crashes and
-crashes with no police response are absent. 
-
-**Analysis is restricted to complete calendar years 2016–2025.** A crash enters CRIS only
-after an officer files a CR-3 and TxDOT processes it, so the final months before any
-extract date are under-reported. The analysis compares winter
-(Nov–Feb) against summer (May–Aug), and a mid-year extract truncates summer closer to the
-present than winter, so an incomplete tail would undercount summer and inflate the
-winter/summer ratio. The
-partial 2026 data is therefore excluded. The cutoff is
-`config.ANALYSIS_END`; `check_completeness.py` compares recent months against their
-historical levels to confirm where reporting has settled.
-
-## Population
-
-| Step | Why |
-|---|---|
-| `Intersection Related` ∈ {INTERSECTION, INTERSECTION RELATED} | Keeps crashes at an intersection *and* on its approach. Approach crashes (queue rear-ends, dilemma-zone crashes) are intersection failures occurring 150ft upstream, and using the `At Intersection Flag` field would drop ~3,700 of them. |
-| Exclude `NON INTERSECTION` | Freeway mainlane. Zero of 12,162 carry a cross street, and their crash-type signature is a freeway's: single-vehicle, rear-end, sideswipe, with right-angle crashes at 2.6% against 15% city-wide. |
-| Exclude `DRIVEWAY ACCESS` | Excluded. |
-| Both street names present, no self-pairs | An intersection requires two distinct street names. Records where both fields carry the same name (e.g. `LEGACY DR & LEGACY DR`) are excluded as malformed. |
-| Signalised only, for the main analyses | Left-turn phasing only exists at a signal. |
-
-**Intersection identity** is the normalised, order-independent street-name pair. Street
-names are canonicalised before pairing: route numbers are standardised (`SH 121`,
-`SH-121`, `SH0121` → `SH121`), suffixes are standardised (`MAIN STREET` → `MAIN ST`), and
-routes carrying a local name are resolved to that name (FM 2934 → Eldorado Pkwy,
-FM 3537 → Main St, FM 2478 → Custer Rd, SH 289 → Preston Rd), since officers record the
-same road under either designation. Dallas Pkwy and the Dallas North Tollway are distinct
-roads and are not combined.
-
-Coordinates are genuine GPS rather than snapped to a reference point: 90% carry eight
-decimal places and 86.6% of distinct points are used by a single crash. They are retained
-for mapping but are not used as the intersection key, since clustering on coordinates
-alone joins freeway crashes into corridor-length groups.
-
-Pooled results — the rate ratio, the dark/daylight comparison, the robustness checks and
-the comparison hour — are computed across all signalised crashes and do not depend on how
-crashes are keyed to intersections.
+- **`Latitude` and `Longitude` as the intersection key**. Considered as an alternative to the street-name pair, 
+but in dense areas, clustering on them chains large number of crashes into corridor-length groups rather 
+than discrete intersections. Thus the normalised street-name pair is used instead.
 
 ## The darkness analysis
 
@@ -153,7 +148,7 @@ tested and is not resolved by this data.
   classified. The comparison is closer to "more permissive" against "less permissive"
   than to permissive against protected.
 
-The result is recorded in `results.json` and stated on the results page.
+The result is recorded in `results.json` and stated on the [results page](https://mbahety.github.io/frisco-crash-analysis/).
 
 ## Known limitations
 
@@ -165,8 +160,10 @@ The result is recorded in `results.json` and stated on the results page.
 
 ## Statistical notes
 
-Two-proportion z tests for share comparisons. Poisson log-ratio intervals for rate
-ratios. Mantel–Haenszel for stratified pooling. Where two effects are compared, an
-explicit interaction test on the log odds ratios: two effects can both be significant and
-still be indistinguishable from each other, so comparing their magnitudes by inspection is
-not sufficient.
+**Share comparisons** use a [two-proportion z test](https://en.wikipedia.org/wiki/Two-proportion_z-test) — a standard test for whether two percentages differ more than chance would produce.
+
+**Rate ratios** use [Poisson log-ratio confidence intervals](https://en.wikipedia.org/wiki/Poisson_distribution#Confidence_interval) — appropriate when comparing crash counts divided by exposure (calendar days), where counts follow a Poisson distribution.
+
+**Stratified pooling** uses the [Mantel–Haenszel method](https://en.wikipedia.org/wiki/Cochran%E2%80%93Mantel%E2%80%93Haenszel_statistics) to combine the dark/daylight comparison across intersections into a single pooled estimate, controlling for which intersections appear in each group.
+
+**Comparing two subgroup effects** uses an [interaction test](https://en.wikipedia.org/wiki/Interaction_(statistics)) on the log odds ratios. This is used in the concentration test, where the dark/daylight odds ratio at permissive-leaning intersections is compared against the same odds ratio at protected-leaning intersections. Finding that each group individually shows an effect is not enough — two effects can both be real while still being statistically indistinguishable from each other. The interaction test makes that comparison directly.

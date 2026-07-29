@@ -34,8 +34,6 @@ def inspect():
         "crash_id": "record identity (one row per crash)",
         "date": "year, month, season; before/after split",
         "time": "hour of day  [stored as HHMM, e.g. '1745']",
-        "lat": "mapping only (not the intersection key)",
-        "lon": "mapping only (not the intersection key)",
         "street": "intersection identity (first street)",
         "cross_street": "intersection identity (second street)",
         "collision": "crash type: left-turn / angle / rear-end / right-turn",
@@ -89,6 +87,8 @@ def main():
 
     print(f"Reading {C.CRASH_FILE.name}\n")
     df, funnel = load()
+    funnel.append(("at signalised intersections — analysis population",
+                   int(df["signal"].sum())))
 
     print("\nRunning analyses")
     dark = analyses.darkness(df)

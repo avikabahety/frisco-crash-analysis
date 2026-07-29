@@ -3,7 +3,7 @@
 Winter evening crashes at Frisco's signalised intersections run measurably higher than
 summer. Left-turn crashes drive a disproportionate share of that difference — roughly
 twice as many between 6 and 8pm in winter months as in summer months, at the same clock
-hours, adjusted for days in each season. At 5pm, daylight in both seasons, the difference
+hours, adjusted for number of days in each season. At 5pm, daylight in both seasons, that difference
 is absent.
 
 📊 **[Full results →](https://mbahety.github.io/frisco-crash-analysis/)**
@@ -32,7 +32,7 @@ Outputs are written to `output/` and `docs/index.html`.
 python analyze.py --inspect   # print the CRIS columns in the export, confirm the mapping
 ```
 
-The export carries 142 columns; the analysis uses 13.
+The export carries 142 columns; the analysis uses 11.
 [Which ones, and why →](METHODOLOGY.md#fields-used)
 
 ## Data

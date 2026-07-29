@@ -32,8 +32,6 @@ COLUMNS = {
     "crash_id": "Crash ID",
     "date": "Crash Date",
     "time": "Crash Time",
-    "lat": "Latitude",
-    "lon": "Longitude",
     "street": "Street Name",
     "cross_street": "Intersecting Street Name",
     "collision": "Manner of Collision",

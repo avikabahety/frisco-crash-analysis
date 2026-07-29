@@ -98,8 +98,6 @@ def load(path=None, verbose=True):
     df["hour"] = parse_hour(raw[col["time"]])
     df["month"] = df["date"].dt.month
     df["year"] = df["date"].dt.year
-    df["lat"] = pd.to_numeric(raw[col["lat"]], errors="coerce")
-    df["lon"] = pd.to_numeric(raw[col["lon"]], errors="coerce")
     upper = lambda c: raw[col[c]].fillna("").astype(str).str.upper().str.strip()
     df["intersection_type"] = upper("intersection")
     df["collision"] = upper("collision")
@@ -112,7 +110,7 @@ def load(path=None, verbose=True):
 
     # 1. crashes that belong to an intersection
     df = df[df["intersection_type"].isin(C.INTERSECTION_TYPES)]
-    funnel.append(("at or related to an intersection", len(df)))
+    funnel.append(("at or related to an intersection (signalised, stop-controlled, and other)", len(df)))
 
     # 2. crashes attributable to a named intersection
     df = df[df["key"] != ""]
@@ -157,8 +155,6 @@ def load(path=None, verbose=True):
         print("Filter funnel")
         for label, n in funnel:
             print(f"  {n:>7,}  {label}")
-        sig = int(df["signal"].sum())
-        print(f"  {sig:>7,}  ...of which at signalised intersections")
 
     return df.reset_index(drop=True), funnel
 

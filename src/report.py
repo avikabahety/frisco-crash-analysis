@@ -289,8 +289,14 @@ def render(dark, mech, funnel, path=None):
     _lt_w_rate  = c["winter_left"] / win_days * 1000
     _lt_s_rate  = c["summer_left"] / sum_days * 1000
 
-    funnel_rows = "\n".join(
-        f'<tr><td class="m">{n:,}</td><td>{label}</td></tr>' for label, n in funnel)
+    funnel_rows = []
+    for i, (label, n) in enumerate(funnel):
+        bold = i == len(funnel) - 1
+        num_cls = ' class="m b"' if bold else ' class="m"'
+        lbl_cls = ' class="b"' if bold else ''
+        funnel_rows.append(
+            f'<tr><td{num_cls}>{n:,}</td><td{lbl_cls}>{label}</td></tr>')
+    funnel_rows = "\n".join(funnel_rows)
 
     html = f'''<!doctype html>
 <html lang="en">
@@ -619,7 +625,7 @@ def render(dark, mech, funnel, path=None):
     <p>All crash records held by TxDOT for Frisco, {span}, narrowed to those that can
     be placed at a named intersection at a known time.</p>
     <table class="tab">
-      <thead><tr><th>Records</th><th>Step</th></tr></thead>
+      <thead><tr><th>Records</th><th style="text-align:left">Step</th></tr></thead>
       <tbody>{funnel_rows}</tbody>
     </table>
     <p class="cap">Freeway mainlane crashes are excluded: none carry a cross street and
