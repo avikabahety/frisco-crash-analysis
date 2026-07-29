@@ -16,9 +16,6 @@ DOCS_DIR = ROOT / "docs"
 # Large, regenerable, and therefore not committed (see .gitignore).
 CRASH_FILE = DATA_DIR / "2016-2026-07-13_cris_list.csv"
 
-# Signal installation dates collected from City of Frisco bulletins. Committed.
-INSTALL_FILE = DATA_DIR / "signal_installations.csv"
-
 # ------------------------------------------------------- reporting completeness
 # A crash enters CRIS only after an officer files a CR-3 and TxDOT processes it, so
 # the most recent months of any extract are incomplete. An extract
@@ -37,7 +34,6 @@ COLUMNS = {
     "time": "Crash Time",
     "lat": "Latitude",
     "lon": "Longitude",
-    "severity": "Crash Severity",
     "street": "Street Name",
     "cross_street": "Intersecting Street Name",
     "collision": "Manner of Collision",
@@ -47,9 +43,6 @@ COLUMNS = {
     "surface": "Surface Condition",
     "intersection": "Intersection Related",
 }
-
-# CRIS severity is text like "K - FATAL INJURY". The code before the dash is the key.
-SEVERITY = {"K": "K", "A": "A", "B": "B", "C": "C", "N": "O", "O": "O", "99": "O"}
 
 # ---------------------------------------------------------------- street aliases
 # Officers record the same physical road under either its route number or its local
@@ -78,7 +71,7 @@ STREET_ALIASES = {
 
 # --------------------------------------------------------------------- filters
 # Crashes that belong to an intersection. NON INTERSECTION crashes are freeway
-# mainlane (0 of 12,162 had a cross street); DRIVEWAY ACCESS is a separate problem.
+# mainlane (0 of 12,162 had a cross street); DRIVEWAY ACCESS crashes are excluded.
 INTERSECTION_TYPES = ["INTERSECTION", "INTERSECTION RELATED"]
 
 # Values that mean "no data" across CRIS text fields.
@@ -90,7 +83,7 @@ NULL_VALUES = ["", "NOT REPORTED", "NAN", "NO DATA", "UNKNOWN"]
 # seasons and serves as a comparison hour with no contrast.
 CONTRAST_HOURS = [18, 19]
 CONTROL_HOUR = 17
-EVENING_HOURS = [18, 19, 20, 21]
+EVENING_HOURS = [18, 19, 20, 21, 22]
 MIDDAY_HOURS = [10, 11, 12, 13, 14, 15]
 
 WINTER_MONTHS = [11, 12, 1, 2]
@@ -100,10 +93,13 @@ SUMMER_MONTHS = [5, 6, 7, 8]
 MIN_CELL = 25
 # Minimum dark and daylight crashes at one intersection to enter the stratified test.
 MIN_STRATUM = 5
-
-# ------------------------------------------------- before/after signalization
-BUFFER_DAYS = 60      # excluded around install: construction and driver adjustment
-MIN_YEARS = 1.0       # minimum coverage before and after for a site to be included
+# Minimum left-turn crashes per season at one intersection during contrast hours
+# for it to appear in the intersection-level seasonal contrast table.
+# Lower than MIN_CELL because this is per-intersection in a 2-hour window, not city-wide.
+MIN_INTERSECTION_CONTRAST = 3
+# Minimum raw count gap (winter_left - summer_left) for an intersection to appear
+# in the contrast table. Filters out intersections with no meaningful directional signal.
+MIN_INTERSECTION_GAP = 5
 
 # ------------------------------------------------------------------- reporting
 SITE_TITLE = "Left-turn crashes after dark"

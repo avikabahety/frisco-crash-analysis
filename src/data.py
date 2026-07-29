@@ -81,12 +81,6 @@ def _header_row(path, token="crash id", limit=60):
     return 0
 
 
-def _severity(value):
-    if pd.isna(value):
-        return "O"
-    return C.SEVERITY.get(str(value).split(" - ")[0].strip().upper(), "O")
-
-
 def load(path=None, verbose=True):
     """Return the analysis frame and a record of the filter funnel.
 
@@ -106,8 +100,6 @@ def load(path=None, verbose=True):
     df["year"] = df["date"].dt.year
     df["lat"] = pd.to_numeric(raw[col["lat"]], errors="coerce")
     df["lon"] = pd.to_numeric(raw[col["lon"]], errors="coerce")
-    df["severity"] = raw[col["severity"]].map(_severity)
-
     upper = lambda c: raw[col[c]].fillna("").astype(str).str.upper().str.strip()
     df["intersection_type"] = upper("intersection")
     df["collision"] = upper("collision")
@@ -135,7 +127,7 @@ def load(path=None, verbose=True):
     # config.ANALYSIS_END.
     if C.ANALYSIS_END:
         df = df[df["date"] <= pd.Timestamp(C.ANALYSIS_END)]
-        funnel.append((f"on or before {C.ANALYSIS_END} (complete reporting)", len(df)))
+        funnel.append((f"on or before {C.ANALYSIS_END}", len(df)))
 
     # derived flags used across analyses
     df["is_left"] = df["collision"].str.contains("ONE STRAIGHT-ONE LEFT TURN", na=False)
@@ -143,8 +135,6 @@ def load(path=None, verbose=True):
     df["is_angle"] = df["collision"].str.contains("ANGLE - BOTH GOING STRAIGHT", na=False)
     df["is_rear"] = df["collision"].str.contains(
         "REAR END|ONE STRAIGHT-ONE STOPPED", na=False)
-    df["is_injury"] = df["severity"].isin(["K", "A", "B", "C"])
-
     df["signal"] = df["control"].str.contains("SIGNAL LIGHT", na=False)
     df["flashing_yellow"] = df["control"].str.contains("FLASHING YELLOW", na=False)
 

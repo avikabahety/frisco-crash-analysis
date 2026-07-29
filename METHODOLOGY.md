@@ -2,14 +2,14 @@
 
 ## Fields used
 
-The CRIS export carries 142 columns, out of which 14 are used. Run `python analyze.py --inspect`
+The CRIS export carries 142 columns, out of which 13 are used. Run `python analyze.py --inspect`
 to print your export's header and confirm each one is present — CRIS field names may vary
 between export versions.
 
 | CRIS column | Used for |
 |---|---|
 | `Crash ID` | Record identity; confirms one row per crash |
-| `Crash Date` | Year, month, season. Also the before/after split for signal installations |
+| `Crash Date` | Year, month, season |
 | `Crash Time` | Hour of day. **Stored as `HHMM`** |
 | `Street Name` | Intersection identity (first street) |
 | `Intersecting Street Name` | Intersection identity (second street) |
@@ -19,7 +19,6 @@ between export versions.
 | `Traffic Control Type` | Restricts to signalised intersections; identifies flashing-yellow control |
 | `Contributing Factors` | Permissive vs protected fingerprint; impaired-driver flag |
 | `Surface Condition` | The dry-pavement-only robustness check |
-| `Crash Severity` | KABCO code → injury flag |
 | `Latitude`, `Longitude` | Mapping only. **Not** the intersection key — see below |
 
 ### Fields deliberately not used
@@ -28,7 +27,7 @@ between export versions.
   ~30% of records (on-system roads). Too sparse to normalise by exposure. Frisco's GIS
   traffic-volume layer would be the source if exposure is ever added.
 - **`At Intersection Flag`** is narrower than `Intersection Related` and drops ~3,700
-  approach crashes, including the queue rear-ends that signalisation actually causes.
+  approach crashes, including queue rear-ends on approaches.
 - **`Latitude`/`Longitude` as the clustering key.** Coordinates are genuine GPS (90%
   carry 8 decimal places; 86.6% of distinct points are used by a single crash), but
   clustering on them alone chains freeway crashes into corridor-length blobs. The 
@@ -59,10 +58,10 @@ historical levels to confirm where reporting has settled.
 
 | Step | Why |
 |---|---|
-| `Intersection Related` ∈ {INTERSECTION, INTERSECTION RELATED} | Keeps crashes at an intersection *and* on its approach. Approach crashes (queue rear-ends, dilemma-zone crashes) are intersection failures occurring 150ft upstream, and using `At Intersection Flag` field would drop ~3,700 of them. |
+| `Intersection Related` ∈ {INTERSECTION, INTERSECTION RELATED} | Keeps crashes at an intersection *and* on its approach. Approach crashes (queue rear-ends, dilemma-zone crashes) are intersection failures occurring 150ft upstream, and using the `At Intersection Flag` field would drop ~3,700 of them. |
 | Exclude `NON INTERSECTION` | Freeway mainlane. Zero of 12,162 carry a cross street, and their crash-type signature is a freeway's: single-vehicle, rear-end, sideswipe, with right-angle crashes at 2.6% against 15% city-wide. |
-| Exclude `DRIVEWAY ACCESS` | A real problem (access management) but a different one. Excluded. |
-| Both street names present, no self-pairs | An intersection needs an identity. `LEGACY DR & LEGACY DR` is a data entry artifact. |
+| Exclude `DRIVEWAY ACCESS` | Excluded. |
+| Both street names present, no self-pairs | An intersection requires two distinct street names. Records where both fields carry the same name (e.g. `LEGACY DR & LEGACY DR`) are excluded as malformed. |
 | Signalised only, for the main analyses | Left-turn phasing only exists at a signal. |
 
 **Intersection identity** is the normalised, order-independent street-name pair. Street
@@ -106,36 +105,26 @@ Crashes coded DAWN or DUSK in `Light Condition` field are excluded from both gro
 
 ### Robustness checks
 
-Each addresses an alternative explanation that would account for the observed difference.
+**1. Counts, not shares.** Left-turn crashes are compared as Poisson rates per 1,000
+calendar days (winter days and summer days counted separately), not as proportions of
+total crashes. Winter and summer each contribute approximately 1,200 calendar days over
+the study period.
 
-**1. Counts, not shares.** Proportions sum to 100%, so the left-turn share could rise
-purely because rear-end and right-angle crashes fall at night. Left-turn crashes are
-therefore counted per 1,000 calendar days, winter against summer, at the same hour.
-Winter and summer cover a near-identical number of days.
+**2. Stratified by intersection (Mantel–Haenszel).** The Mantel–Haenszel odds ratio
+pools the dark/daylight left-turn odds ratio within each intersection, requiring at least
+`MIN_STRATUM` crashes on each side (see `config.py`). A sign test across strata checks
+whether the majority of intersections move in the predicted direction, complementing the
+pooled test.
 
-**2. Stratified by intersection (Mantel–Haenszel).** Crashes after dark may occur at a
-different set of intersections than daylight crashes. Pooling the odds ratio within
-intersections tests whether the association holds inside the same intersection. A sign
-test across strata is reported alongside.
+**3. Dry pavement only.** Restricted to crashes where `Surface Condition` = DRY. The
+proportion test is re-run on this subset.
 
-**3. Dry pavement only.** Winter is both darker and wetter.
+**4. Right-turn comparison.** The same dark/daylight proportion test run on right-turn
+crashes. No effect expected or found.
 
-**4. Right-turn comparison.** If night driving were generally more difficult, other
-turning movements would be expected to shift similarly.
+**5. Impaired drivers excluded.** Crashes where `Contributing Factors` contains an
+impairment code are dropped. The proportion test is re-run on the remainder.
 
-**5. Impaired drivers.** If the darkness effect were alcohol-related rather than a visibility effect, removing impaired-driver crashes should reduce or eliminate it. The difference is unchanged.
-
-
-### Excess crashes
-
-Only the left-turn-specific excess is attributed: what remains after allowing for the
-general increase in crashes after dark. Expected winter left-turn crashes are computed by
-scaling summer left-turn crashes by the winter/summer ratio for all crashes at that hour;
-the excess is the remainder.
-
-Traffic volumes are lower after dark, so fewer left turns are likely being attempted while
-more left-turn crashes are recorded. The risk per turn attempted would then be higher than
-this figure indicates, making the estimate conservative.
 
 ## The mechanism analysis
 
@@ -150,9 +139,6 @@ contributing factor therefore carries information about which phase was operatin
 **Calibration:** crashes recorded at flashing-yellow-arrow control are permissive by
 definition and provide a reference point for the factor distribution under permissive
 operation.
-
-Left-turn phasing is configured per intersection, so results are reported per intersection
-rather than as a city-wide characterisation.
 
 ### Concentration test (not resolved)
 
@@ -169,35 +155,13 @@ tested and is not resolved by this data.
 
 The result is recorded in `results.json` and stated on the results page.
 
-## The signalisation analysis
-
-Before/after at intersections with **known installation dates** from City of Frisco
-bulletins, with a 60-day buffer excluded around each install (construction, flashing
-mode, driver adjustment) and a minimum of one year on each side.
-
-**Reported as rates, not shares.** After signalisation the left-turn *share* rises while
-the left-turn *rate* falls, because total crashes fall faster than left-turn crashes do. A
-proportion can rise while the quantity it measures declines, so rates are used throughout.
-
-**What the crash-type shift supports.** Right-angle crashes fall sharply while rear-end
-crashes rise sharply — the trade-off signalisation is expected to produce. Regression to
-the mean would move every crash type in the same direction and does not account for one
-type rising while another falls.
-
-**What is not reported.** The overall change in crash frequency. Signals tend to be
-installed where crashes have recently increased, so some subsequent decline would be
-expected regardless. A causal frequency estimate requires Empirical Bayes with a
-calibrated safety performance function.
-
 ## Known limitations
 
-- **Reportable crashes only** (CR-3 threshold).
-- **No exposure data.** CRIS ADT is populated on only ~30% of records (on-system roads).
-  Frisco's GIS traffic-volume layer may provide this data.
-- **Signal timings unknown.** The analysis is not informed by signal timings when intersections switch between protected and permissive left turns. 
 - **Hours dark year-round (21:00+) cannot be tested** — there is no daylight
-  counterfactual at 10pm.
-- **Contributing factors are officer-coded** and carry the usual reporting variability.
+  counterfactual at those hours, so the design has no traction beyond approximately 9pm.
+- **Contributing factors are officer-coded.** The permissive/protected fingerprint rests
+  on `FAILED TO YIELD RIGHT OF WAY - TURNING LEFT` vs `DISREGARD STOP AND GO SIGNAL`.
+  These are officer judgements and may carry reporting variability.
 
 ## Statistical notes
 
