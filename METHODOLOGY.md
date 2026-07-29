@@ -14,7 +14,7 @@ are absent.
 **Analysis is restricted to complete calendar years 2016–2025.** A crash enters
 [CRIS](https://cris.dot.state.tx.us/public/Query/app/home) only after an officer files
 a CR-3 and TxDOT processes it, so the data entry for final months may be incomplete. 
-Thus the partial 2026 datais excluded. The cutoff date is `config.ANALYSIS_END`; `check_completeness.py`
+Thus the partial 2026 data is excluded. The cutoff date is `config.ANALYSIS_END`; `check_completeness.py`
 compares recent months against their historical levels to confirm where reporting has
 settled.
 

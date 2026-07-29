@@ -35,8 +35,11 @@ col = C.COLUMNS
 ir = raw[col["intersection"]].fillna("").str.upper().str.strip()
 keep = ir.isin(C.INTERSECTION_TYPES)
 df = raw[keep].copy()
-df["lat"] = pd.to_numeric(df[col["lat"]], errors="coerce")
-df["lon"] = pd.to_numeric(df[col["lon"]], errors="coerce")
+# Lat/lon are read directly from the raw CSV — they are not in C.COLUMNS since the
+# main analysis does not use coordinates, but they are needed here to detect aliases
+# by comparing the geographic footprint of crash clusters for each street name.
+df["lat"] = pd.to_numeric(df.get("Latitude"), errors="coerce")
+df["lon"] = pd.to_numeric(df.get("Longitude"), errors="coerce")
 
 # --------------------------------------------------------------------------
 section("1. WHAT THE ALIAS MAP MERGES")

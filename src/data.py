@@ -81,7 +81,7 @@ def _header_row(path, token="crash id", limit=60):
     return 0
 
 
-def load(path=None, verbose=True):
+def load(path=None):
     """Return the analysis frame and a record of the filter funnel.
 
     The dataframe contains every intersection crash. Individual analyses narrow further
@@ -150,11 +150,6 @@ def load(path=None, verbose=True):
 
     df["winter"] = df["month"].isin(C.WINTER_MONTHS)
     df["summer"] = df["month"].isin(C.SUMMER_MONTHS)
-
-    if verbose:
-        print("Filter funnel")
-        for label, n in funnel:
-            print(f"  {n:>7,}  {label}")
 
     return df.reset_index(drop=True), funnel
 

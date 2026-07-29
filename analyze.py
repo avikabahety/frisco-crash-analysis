@@ -90,6 +90,10 @@ def main():
     funnel.append(("at signalised intersections — analysis population",
                    int(df["signal"].sum())))
 
+    print("Filter funnel")
+    for label, n in funnel:
+        print(f"  {n:>7,}  {label}")
+
     print("\nRunning analyses")
     dark = analyses.darkness(df)
     mech = analyses.mechanism(df)
