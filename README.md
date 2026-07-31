@@ -6,7 +6,7 @@ twice as many between 6 and 8pm in winter months as in summer months, at the sam
 hours, adjusted for number of days in each season. At 5pm, daylight in both seasons, that difference
 is absent.
 
-📊 **[Full results →](https://mbahety.github.io/frisco-crash-analysis/)**
+📊 **[Full results →](https://avikabahety.github.io/frisco-crash-analysis/)**
 
 ---
 

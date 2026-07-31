@@ -40,7 +40,7 @@ Pooled results — the rate ratio, the dark/daylight comparison, the robustness 
 the comparison hour — are computed across all signalised crashes and do not depend on how
 crashes are keyed to intersections.
 
-Record counts at each filter step are shown in the [results page](https://mbahety.github.io/frisco-crash-analysis/)
+Record counts at each filter step are shown in the [results page](https://avikabahety.github.io/frisco-crash-analysis/)
 under "How the data was cut".
 
 ## Fields used
@@ -148,7 +148,7 @@ tested and is not resolved by this data.
   classified. The comparison is closer to "more permissive" against "less permissive"
   than to permissive against protected.
 
-The result is recorded in `results.json` and stated on the [results page](https://mbahety.github.io/frisco-crash-analysis/).
+The result is recorded in `results.json` and stated on the [results page](https://avikabahety.github.io/frisco-crash-analysis/).
 
 ## Known limitations
 

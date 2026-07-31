@@ -102,4 +102,4 @@ MIN_INTERSECTION_GAP = 5
 # ------------------------------------------------------------------- reporting
 SITE_TITLE = "Left-turn crashes after dark"
 SITE_SUBTITLE = "Frisco, TX \u00b7 TxDOT CRIS crash records, 2016\u20132025"
-REPO_URL = "https://github.com/mbahety/frisco-crash-analysis"
+REPO_URL = "https://github.com/avikabahety/frisco-crash-analysis"
