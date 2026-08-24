@@ -122,19 +122,31 @@ def _row_note(h):
     return                                        "dark in both seasons"
 
 
+_ROW_TYPES = ["left", "right", "angle", "rear"]
+
+
+def _fmt_ratio(r):
+    """Rare crash types can hit zero winter or summer crashes in a given hour,
+    where the ratio is undefined (nan) rather than misleadingly large or small."""
+    return "&mdash;" if r != r else f"{r:.2f}&times;"
+
+
 def _rows(dark):
     out = []
     for h in sorted(dark["by_hour"]):
         v = dark["by_hour"][h]
         ctrl = v["is_control"]
-        ratio = v["left_ratio"]
         note = _row_note(h)
+        cells = "".join(
+            f'<td class="m{" grp" if t != _ROW_TYPES[0] else ""}">{v[f"winter_{t}_rate"]:.1f}</td>'
+            f'<td class="m">{v[f"summer_{t}_rate"]:.1f}</td>'
+            f'<td class="m b">{_fmt_ratio(v[f"{t}_ratio"])}</td>'
+            for t in _ROW_TYPES
+        )
         out.append(f'''<tr class="{'ctrl' if ctrl else ''}">
       <td class="m">{h % 12 or 12}{"am" if h < 12 else "pm"}</td>
-      <td class="m">{v['winter_left']}</td>
-      <td class="m">{v['summer_left']}</td>
-      <td class="m b">{ratio:.2f}&times;</td>
-      <td class="m dim">{v['all_ratio']:.2f}&times;</td>
+      {cells}
+      <td class="m dim grp">{v['all_ratio']:.2f}&times;</td>
       <td class="note">{note}</td>
     </tr>''')
     return "\n".join(out)
@@ -245,6 +257,126 @@ def _chart_type_diff(dark):
 <div class="key" style="padding-top:6px">{key}</div>'''
 
 
+def _chart_type_ratio(dark):
+    """Winter/summer rate ratio by hour, one line per crash type.
+
+    Three lines: left-turn (amber), angle (green), rear-end (red). A horizontal
+    1x line is the reference -- above it means winter runs higher, below means
+    summer runs higher. Unlike the mix-share chart, this plots the same ratio
+    units used throughout the rest of the page (e.g. "2.09x"), so a type can't
+    appear to trade off against another the way a share chart can suggest: each
+    line here is independent of what the others are doing.
+
+    Right-turn is left off this chart on purpose: its per-hour counts are so
+    small (often 1-3 crashes) that a single crash swings its ratio by several
+    multiples (e.g. 8x on a summer count of 1), which would stretch the shared
+    y-axis and crush the other three lines' real signal. Right-turn's ratio is
+    still shown in full in the table above, where an unstable or undefined
+    value already renders as an em-dash rather than a misleading number.
+    """
+    hours = sorted(dark["by_hour"].keys())
+    if not hours:
+        return ""
+    lo, hi = min(hours), max(hours)
+    W, H = 720, 300
+    L, R, T, B = 68, 20, 48, 64
+    pw, ph = W - L - R, H - T - B
+    span = max(hi - lo, 1)
+
+    types = [
+        ("left",  "var(--amber)", "left-turn"),
+        ("angle", "var(--green)", "right-angle"),
+        ("rear",  "var(--red)",   "rear-end"),
+    ]
+
+    all_vals = [dark["by_hour"][h][f"{t}_ratio"]
+                for h in hours for t, _, _ in types
+                if dark["by_hour"][h][f"{t}_ratio"] == dark["by_hour"][h][f"{t}_ratio"]]
+    y_max = max(max(all_vals), 1) * 1.08
+    y_min = 0
+
+    def x(h):
+        return L + (h - lo) / span * pw
+
+    def y(v):
+        return T + ph - (v - y_min) / (y_max - y_min) * ph
+
+    # Dark band (evening: winter dark, summer light)
+    x0 = x(max(WINTER_SUNSET, lo))
+    x1 = x(min(SUMMER_SUNSET, hi))
+    mx0 = x(max(SUMMER_SUNRISE, lo))
+    mx1 = x(min(WINTER_SUNRISE, hi))
+
+    def valid_points(field):
+        return [(h, dark["by_hour"][h][field]) for h in hours
+                if dark["by_hour"][h][field] == dark["by_hour"][h][field]]
+
+    def path(field):
+        # Break the line at any hour with an undefined (nan) ratio, rather than
+        # skipping straight past it, which would visually connect two hours that
+        # don't have a real value between them.
+        segments, current = [], []
+        for h in hours:
+            v = dark["by_hour"][h][field]
+            if v != v:
+                if current:
+                    segments.append(current)
+                    current = []
+                continue
+            current.append((h, v))
+        if current:
+            segments.append(current)
+        return " ".join(
+            "M" + " L".join(f"{x(h):.1f},{y(v):.1f}" for h, v in seg)
+            for seg in segments)
+
+    lines = "".join(
+        f'<path d="{path(f"{t}_ratio")}" fill="none" stroke="{col}" '
+        f'stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
+        for t, col, _ in types)
+
+    dots = "".join(
+        f'<circle cx="{x(h):.1f}" cy="{y(v):.1f}" r="3" fill="{col}"/>'
+        for t, col, _ in types
+        for h, v in valid_points(f"{t}_ratio"))
+
+    ticks = "".join(
+        f'<text x="{x(h):.1f}" y="{H - B + 18}" class="ax" text-anchor="middle">'
+        f'{h % 12 or 12}{"am" if h < 12 else "pm"}</text>' for h in hours)
+
+    grid_vals = sorted({0, 1, round(y_max)} | ({2} if y_max > 2 else set()))
+    grid_parts = []
+    for v in grid_vals:
+        yv = y(v)
+        line_attr = 'class="grid"' if v != 1 else 'stroke="#4A5E6E" stroke-width="1.5"'
+        grid_parts.append(
+            f'<line x1="{L}" y1="{yv:.1f}" x2="{W - R}" y2="{yv:.1f}" {line_attr}/>'
+            f'<text x="{L - 8}" y="{yv + 4:.1f}" class="ax" text-anchor="end">'
+            f'{v:.0f}&times;</text>'
+        )
+    grid = "".join(grid_parts)
+
+    key = "".join(
+        f'<span><i style="background:{col}"></i>{label}</span>'
+        for _, col, label in types)
+
+    return f'''<svg viewBox="0 0 {W} {H}" class="chart" role="img"
+   aria-label="Crash type rate ratio, winter divided by summer, by hour">
+  <text x="{L}" y="18" class="title">Crash-type rate ratio: winter &divide; summer</text>
+  <rect x="{mx0:.1f}" y="{T}" width="{max(mx1 - mx0, 0):.1f}" height="{ph}" class="band"/>
+  <rect x="{x0:.1f}" y="{T}" width="{max(x1 - x0, 0):.1f}" height="{ph}" class="band"/>
+  <text x="{(x0 + x1) / 2:.1f}" y="{T + ph - 18:.1f}" class="bandlab" text-anchor="middle">dark in winter,</text>
+  <text x="{(x0 + x1) / 2:.1f}" y="{T + ph - 6:.1f}" class="bandlab" text-anchor="middle">light in summer</text>
+  {grid}
+  {lines}
+  {dots}
+  {ticks}
+  <text transform="translate({L - 42},{T + ph / 2:.1f}) rotate(-90)" text-anchor="middle" class="axtitle">winter&thinsp;/&thinsp;summer ratio</text>
+  <text x="{L + pw / 2:.1f}" y="{H - 14}" class="axtitle" text-anchor="middle">Hour of day</text>
+</svg>
+<div class="key" style="padding-top:6px">{key}</div>'''
+
+
 def _intersection_contrast_rows(dark):
     """Table rows for the intersection seasonal contrast, ranked by rate gap.
 
@@ -270,7 +402,19 @@ def _intersection_contrast_rows(dark):
     return "\n".join(rows)
 
 
-def render(dark, mech, funnel, path=None):
+def _top_rows(top):
+    return "\n".join(f'''<tr>
+      <td>{t['intersection']}</td>
+      <td class="m b">{t['total_crashes']}</td>
+      <td class="m">{t['left_turn_crashes']}</td>
+      <td class="m">{t['right_turn_crashes']}</td>
+      <td class="m">{t['right_angle_crashes']}</td>
+      <td class="m">{t['rear_end_crashes']}</td>
+      <td class="m dim">{t['other_crashes']}</td>
+    </tr>''' for t in top)
+
+
+def render(dark, mech, funnel, top, path=None):
     path = path or (C.DOCS_DIR / "index.html")
     c = dark["contrast"]
     wi = dark["within_intersection"]
@@ -390,6 +534,7 @@ def render(dark, mech, funnel, path=None):
   .tab tr.ctrl .m {{ color:var(--slate); }}
   .tab tr.sig {{ background:#FBF3E4; }}
   .tab tr.sig td:first-child {{ font-weight:600; }}
+  .tab .grp {{ border-left:1px solid #4A5E6E; }}
 
   /* checks */
   .checks {{ list-style:none; padding:0; margin:18px 0; }}
@@ -486,19 +631,80 @@ def render(dark, mech, funnel, path=None):
   <section class="sec">
     <h2><span class="eye">crash types</span>Left-turn crashes stand out in the
     evening window</h2>
-    <p>The chart below shows the difference in crash-type mix between winter and summer
-    at each hour &mdash; positive values mean that type is more common in winter,
-    negative means more common in summer, zero means no difference. In the evening
-    hours where winter is dark and summer is still light, left-turn crashes show a
-    pronounced positive difference.</p>
+    <p>The chart below shows each crash type's share of that hour's crashes, winter
+    minus summer &mdash; positive values mean a bigger share in winter, negative means
+    a bigger share in summer, zero means no difference. In the evening hours where
+    winter is dark and summer is still light, left-turn crashes show a pronounced
+    positive difference.</p>
     <div class="figure">
       {_chart_type_diff(dark)}
+    </div>
+    <p class="cap" style="margin-top:12px">To understand the crash type mix chart,
+    here is an example: 7pm: right-angle crashes made up 19 of 151 winter crashes
+    that hour (12.6%) versus 26 of 98 summer crashes (26.5%) &mdash; a difference of
+    &minus;13.9 percentage points, the point plotted for right-angle at 7pm above.
+    This measures each type's share of that hour's crash mix, not how often it
+    happens.</p>
+    <p style="margin-top:18px"><b>Same comparison, as a rate ratio:</b> The chart
+    below shows crash type (left-turn, right-angle and rear-end), plotted as a
+    winter&thinsp;/&thinsp;summer rate ratio. Right-turn is left off this particular
+    chart: its per-hour counts are small so one crash can swing its ratio
+    several-fold, which would stretch the shared scale and hide the other three
+    lines' real signal &mdash; but right-turn ratio is still shown in full in the
+    table below. A gap in a line means too few crashes that hour in one season for a
+    ratio to be defined.</p>
+    <div class="figure">
+      {_chart_type_ratio(dark)}
     </div>
     <p style="margin-top:18px">At 6&ndash;8pm, left-turn crashes run at
     {_lt_w_rate:.0f}&nbsp;per 1,000 winter days versus {_lt_s_rate:.0f}&nbsp;per
     1,000 summer days &mdash; a rate ratio of {c['ratio']:.2f}&times;
     (95%&nbsp;CI&nbsp;{c['lo']:.2f}&ndash;{c['hi']:.2f}). Those hours are dark in
     winter and light in summer.</p>
+    <p style="margin-top:18px">The same 6&ndash;8pm window, all five crash types
+    side by side:</p>
+    <table class="tab">
+      <thead><tr>
+        <th style="text-align:left">Crashes per 1,000 days &mdash; 6&ndash;8pm window</th>
+        <th>Winter</th><th>Summer</th>
+        <th>Winter&thinsp;/&thinsp;Summer ratio</th>
+      </tr></thead>
+      <tbody>
+        <tr class="sig">
+          <td>Left-turn</td>
+          <td class="m">{_lt_w_rate:.0f}</td><td class="m">{_lt_s_rate:.0f}</td>
+          <td class="m">{c['ratio']:.2f}&times;</td>
+        </tr>
+        <tr>
+          <td>Right-turn</td>
+          <td class="m">{c['winter_right'] / win_days * 1000:.0f}</td>
+          <td class="m">{c['summer_right'] / sum_days * 1000:.0f}</td>
+          <td class="m">{_fmt_ratio(c['right_ratio'])}</td>
+        </tr>
+        <tr>
+          <td>Right-angle</td>
+          <td class="m">{c['winter_angle'] / win_days * 1000:.0f}</td>
+          <td class="m">{c['summer_angle'] / sum_days * 1000:.0f}</td>
+          <td class="m">{_fmt_ratio(c['angle_ratio'])}</td>
+        </tr>
+        <tr>
+          <td>Rear-end</td>
+          <td class="m">{c['winter_rear'] / win_days * 1000:.0f}</td>
+          <td class="m">{c['summer_rear'] / sum_days * 1000:.0f}</td>
+          <td class="m">{_fmt_ratio(c['rear_ratio'])}</td>
+        </tr>
+        <tr>
+          <td>Other</td>
+          <td class="m">{c['winter_other'] / win_days * 1000:.0f}</td>
+          <td class="m">{c['summer_other'] / sum_days * 1000:.0f}</td>
+          <td class="m">{_fmt_ratio(c['other_ratio'])}</td>
+        </tr>
+      </tbody>
+    </table>
+    <p class="cap">The "other" category includes single-vehicle crashes,
+    same-direction sideswipes, and other less common collision patterns such as two
+    vehicles both turning left, or a left-turning vehicle crashing into an oncoming
+    right-turning vehicle.</p>
   </section>
 
   <section class="sec">
@@ -518,18 +724,55 @@ def render(dark, mech, funnel, path=None):
         <span><i style="background:var(--sky)"></i>summer (May&ndash;Aug)</span>
       </div>
     </div>
-    <table class="tab" style="margin-top:28px">
-      <thead><tr>
-        <th>Hour</th><th>Winter crashes</th><th>Summer crashes</th>
-        <th>Left-turn ratio</th><th>All-crash ratio</th><th></th>
-      </tr></thead>
+    <div class="figure" style="margin-top:16px">
+      {_chart(dark, "winter_right_rate", "summer_right_rate", "Right-turn crashes by hour of day")}
+      <div class="key">
+        <span><i style="background:var(--amber)"></i>winter (Nov&ndash;Feb)</span>
+        <span><i style="background:var(--sky)"></i>summer (May&ndash;Aug)</span>
+      </div>
+    </div>
+    <div class="figure" style="margin-top:16px">
+      {_chart(dark, "winter_angle_rate", "summer_angle_rate", "Right-angle crashes by hour of day")}
+      <div class="key">
+        <span><i style="background:var(--amber)"></i>winter (Nov&ndash;Feb)</span>
+        <span><i style="background:var(--sky)"></i>summer (May&ndash;Aug)</span>
+      </div>
+    </div>
+    <div class="figure" style="margin-top:16px">
+      {_chart(dark, "winter_rear_rate", "summer_rear_rate", "Rear-end crashes by hour of day")}
+      <div class="key">
+        <span><i style="background:var(--amber)"></i>winter (Nov&ndash;Feb)</span>
+        <span><i style="background:var(--sky)"></i>summer (May&ndash;Aug)</span>
+      </div>
+    </div>
+    <p style="margin-top:28px">Below is the same comparison, broken out by crash type,
+    in tabular format.</p>
+    <div style="overflow-x:auto">
+    <table class="tab">
+      <thead>
+        <tr>
+          <th rowspan="2">Hour</th>
+          <th colspan="3">Left-turn</th>
+          <th colspan="3" class="grp">Right-turn</th>
+          <th colspan="3" class="grp">Right-angle</th>
+          <th colspan="3" class="grp">Rear-end</th>
+          <th rowspan="2" class="grp">All-crash<br>ratio</th>
+          <th rowspan="2"></th>
+        </tr>
+        <tr>
+          <th style="text-align:right">Winter</th><th>Summer</th><th>Ratio</th>
+          <th class="grp">Winter</th><th>Summer</th><th>Ratio</th>
+          <th class="grp">Winter</th><th>Summer</th><th>Ratio</th>
+          <th class="grp">Winter</th><th>Summer</th><th>Ratio</th>
+        </tr>
+      </thead>
       <tbody>{_rows(dark)}</tbody>
     </table>
-    <p class="cap">Crash columns show raw counts over the full study period. Ratios
-    are season-adjusted (crashes per day). The chart plots crashes per 1,000 days,
-    so chart values differ from the counts here: 94 winter crashes at 6pm over
-    1,202 winter days = 78 per 1,000 days. Left-turn crashes rise approximately
-    twice as fast as crashes overall.</p>
+    </div>
+    <p class="cap">Winter and summer columns are crashes per 1,000 season-days, not
+    raw counts &mdash; that keeps every type directly comparable despite winter and
+    summer covering a different number of calendar days. Ratios are
+    winter&thinsp;/&thinsp;summer.</p>
     <p class="cap">6am, 7am, and 5pm are unlabelled: light conditions change
     mid-hour at those times and a single label would misrepresent part of each hour.</p>
   </section>
@@ -618,6 +861,27 @@ def render(dark, mech, funnel, path=None):
         limited.</li>
       </ul>
     </div>
+  </section>
+
+  <section class="sec">
+    <h2><span class="eye">for reference</span>Signalized intersections with the most crashes overall</h2>
+    <p>For background context, the table below ranks Frisco's signalized
+    intersections by total crash count of any type, all hours and seasons combined,
+    {span}.</p>
+    <div style="overflow-x:auto">
+    <table class="tab">
+      <thead><tr>
+        <th>Intersection</th>
+        <th>Total</th><th>Left-turn</th><th>Right-turn</th>
+        <th>Right-angle</th><th>Rear-end</th><th>Other</th>
+      </tr></thead>
+      <tbody>{_top_rows(top)}</tbody>
+    </table>
+    </div>
+    <p class="cap">Not every intersection listed here is necessarily maintained by
+    the City of Frisco. Several sit on state highways (US380, SH121) or roads shared
+    with neighboring cities, which may fall under TxDOT's or another jurisdiction's
+    authority.</p>
   </section>
 
   <section class="sec">

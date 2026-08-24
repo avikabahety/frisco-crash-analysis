@@ -99,6 +99,12 @@ MIN_INTERSECTION_CONTRAST = 3
 # in the contrast table. Filters out intersections with no meaningful directional signal.
 MIN_INTERSECTION_GAP = 5
 
+# Size of the "largest signalized intersections by total crash count" export
+# (top_intersections.csv). For the city team to independently spot-check the
+# darkness finding at a small number of intersections they can verify are
+# Frisco-maintained. Not used by the public report.
+TOP_N_INTERSECTIONS = 25
+
 # ------------------------------------------------------------------- reporting
 SITE_TITLE = "Left-turn crashes after dark"
 SITE_SUBTITLE = "Frisco, TX \u00b7 TxDOT CRIS crash records, 2016\u20132025"

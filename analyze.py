@@ -97,6 +97,7 @@ def main():
     print("\nRunning analyses")
     dark = analyses.darkness(df)
     mech = analyses.mechanism(df)
+    top = analyses.top_intersections(df)
 
     C.OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
@@ -175,20 +176,38 @@ def main():
 
     # hourly.csv — one row per hour. Columns:
     #
-    # hour               clock hour (0-23)
-    # winter_left        raw left-turn crash count, winter months (Nov-Feb)
-    # summer_left        raw left-turn crash count, summer months (May-Aug)
-    # winter_all         raw total crash count, winter months
-    # summer_all         raw total crash count, summer months
-    # winter_left_rate   left-turn crashes per 1,000 winter calendar days
-    # summer_left_rate   left-turn crashes per 1,000 summer calendar days
-    # winter_all_rate    all crashes per 1,000 winter calendar days
-    # summer_all_rate    all crashes per 1,000 summer calendar days
-    # left_ratio         winter/summer rate ratio for left-turn crashes
-    # left_lo            95% CI lower bound for left_ratio (Poisson)
-    # left_hi            95% CI upper bound for left_ratio (Poisson)
-    # all_ratio          winter/summer rate ratio for all crashes at this hour
-    # is_control         True for hour 17 (light in both seasons; no darkness contrast)
+    # hour                 clock hour (0-23)
+    # winter_left          raw left-turn crash count, winter months (Nov-Feb)
+    # summer_left          raw left-turn crash count, summer months (May-Aug)
+    # winter_all           raw total crash count, winter months
+    # summer_all           raw total crash count, summer months
+    # winter_left_rate     left-turn crashes per 1,000 winter calendar days
+    # summer_left_rate     left-turn crashes per 1,000 summer calendar days
+    # winter_all_rate      all crashes per 1,000 winter calendar days
+    # summer_all_rate      all crashes per 1,000 summer calendar days
+    # left_ratio           winter/summer rate ratio for left-turn crashes
+    # left_lo              95% CI lower bound for left_ratio (Poisson)
+    # left_hi              95% CI upper bound for left_ratio (Poisson)
+    # all_ratio            winter/summer rate ratio for all crashes at this hour
+    # is_control           True for hour 17 (light in both seasons; no darkness contrast)
+    #
+    # The block below repeats for right-turn, right-angle and rear-end, and for
+    # "other" (every intersection crash not coded as one of the four types above --
+    # not a reconciliation check, just visibility into how much of each season's
+    # crashes the four named types cover):
+    #
+    # winter_<type>        raw crash count, winter months
+    # summer_<type>         raw crash count, summer months
+    # winter_<type>_rate    crashes per 1,000 winter calendar days
+    # summer_<type>_rate    crashes per 1,000 summer calendar days
+    # <type>_ratio          winter/summer rate ratio
+    #
+    # Then for left, right, angle and rear (not "other" or "all"):
+    #
+    # <type>_winter_pct    this type's share of ALL crashes that hour, winter (%)
+    # <type>_summer_pct    this type's share of ALL crashes that hour, summer (%)
+    # <type>_diff_pp       winter_pct minus summer_pct, in percentage points --
+    #                      what the crash-type-mix chart on the report plots
     pd.DataFrame([
         {"hour": k, **{kk: vv for kk, vv in v.items()}}
         for k, v in sorted(dark["by_hour"].items())
@@ -226,12 +245,28 @@ def main():
     pd.DataFrame(dark["intersection_contrast"]).to_csv(
         C.OUTPUT_DIR / "intersection_contrast.csv", index=False)
 
+    # top_intersections.csv — the TOP_N_INTERSECTIONS signalized intersections with
+    # the most total crashes, 2016-2025. Not used by the public report; for the city
+    # team to pick a handful of intersections they can verify are Frisco-maintained
+    # and independently re-check the seasonal left-turn pattern themselves. Columns:
+    #
+    # intersection           normalised street-name pair
+    # total_crashes          all crashes at this intersection, all hours, all seasons
+    # left_turn_crashes      of which coded "ONE STRAIGHT-ONE LEFT TURN"
+    # right_turn_crashes     of which coded "ONE STRAIGHT-ONE RIGHT TURN"
+    # right_angle_crashes    of which coded "ANGLE - BOTH GOING STRAIGHT"
+    # rear_end_crashes       of which coded rear-end / one stopped
+    # other_crashes          total_crashes minus the four columns above -- not a
+    #                        reconciliation check, just visibility into how much of
+    #                        this intersection's crashes the four named types cover
+    pd.DataFrame(top).to_csv(C.OUTPUT_DIR / "top_intersections.csv", index=False)
+
     report.write_json(dark, mech)
-    page = report.render(dark, mech, funnel)
+    page = report.render(dark, mech, funnel, top)
 
     written = [str(page.relative_to(C.ROOT)), "output/results.json",
                "output/hourly.csv", "output/intersections.csv",
-               "output/intersection_contrast.csv"]
+               "output/intersection_contrast.csv", "output/top_intersections.csv"]
     print("\n  WROTE")
     for w in written:
         print(f"    {w}")

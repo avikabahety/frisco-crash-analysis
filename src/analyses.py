@@ -70,6 +70,28 @@ def darkness(df):
             "all_ratio": all_ratio,
             "is_control": h == C.CONTROL_HOUR,
         }
+        # Right-turn, right-angle and rear-end get the same treatment as left-turn:
+        # raw counts, per-1,000-day rates and a winter/summer rate ratio. "other" is
+        # whatever is left after the four coded types, so every hour's rate columns
+        # account for the full crash population -- not a reconciliation check, just
+        # visibility into how much of each season's crashes the four types cover.
+        w_left, s_left = int(w["is_left"].sum()), int(s["is_left"].sum())
+        for label, col in [("right", "is_right"), ("angle", "is_angle"), ("rear", "is_rear")]:
+            w_n, s_n = int(w[col].sum()), int(s[col].sum())
+            ratio, _, _ = stats.rate_ratio(w_n, win_days, s_n, sum_days)
+            hours[h][f"winter_{label}"] = w_n
+            hours[h][f"summer_{label}"] = s_n
+            hours[h][f"winter_{label}_rate"] = w_n / win_days * 1000
+            hours[h][f"summer_{label}_rate"] = s_n / sum_days * 1000
+            hours[h][f"{label}_ratio"] = ratio
+        w_other = len(w) - (w_left + hours[h]["winter_right"] + hours[h]["winter_angle"] + hours[h]["winter_rear"])
+        s_other = len(s) - (s_left + hours[h]["summer_right"] + hours[h]["summer_angle"] + hours[h]["summer_rear"])
+        other_ratio, _, _ = stats.rate_ratio(w_other, win_days, s_other, sum_days)
+        hours[h]["winter_other"] = w_other
+        hours[h]["summer_other"] = s_other
+        hours[h]["winter_other_rate"] = w_other / win_days * 1000
+        hours[h]["summer_other_rate"] = s_other / sum_days * 1000
+        hours[h]["other_ratio"] = other_ratio
     # Annotate each hour with per-crash-type share and winter-minus-summer diff.
     # Used by the crash-type mix difference chart in the report.
     for h, v in hours.items():
@@ -85,7 +107,10 @@ def darkness(df):
 
     out["by_hour"] = hours
 
-    # The contrast hours pooled, as a rate ratio.
+    # The contrast hours pooled, as a rate ratio. Pooling the hours' counts first and
+    # taking one ratio (rather than averaging the per-hour ratios) is the same
+    # approach used for left-turn throughout -- it's what "161 winter vs 79 summer,
+    # 2.09x" on the report page is computed from.
     cw = sig[sig["winter"] & sig["hour"].isin(C.CONTRAST_HOURS)]
     cs = sig[sig["summer"] & sig["hour"].isin(C.CONTRAST_HOURS)]
     ratio, lo, hi = stats.rate_ratio(
@@ -94,6 +119,25 @@ def darkness(df):
         "winter_left": int(cw["is_left"].sum()), "summer_left": int(cs["is_left"].sum()),
         "ratio": ratio, "lo": lo, "hi": hi, "hours": C.CONTRAST_HOURS,
     }
+    cw_left, cs_left = int(cw["is_left"].sum()), int(cs["is_left"].sum())
+    for label, col in [("right", "is_right"), ("angle", "is_angle"), ("rear", "is_rear")]:
+        w_n, s_n = int(cw[col].sum()), int(cs[col].sum())
+        r, r_lo, r_hi = stats.rate_ratio(w_n, win_days, s_n, sum_days)
+        out["contrast"][f"winter_{label}"] = w_n
+        out["contrast"][f"summer_{label}"] = s_n
+        out["contrast"][f"{label}_ratio"] = r
+        out["contrast"][f"{label}_lo"] = r_lo
+        out["contrast"][f"{label}_hi"] = r_hi
+    cw_other = len(cw) - (cw_left + out["contrast"]["winter_right"]
+                           + out["contrast"]["winter_angle"] + out["contrast"]["winter_rear"])
+    cs_other = len(cs) - (cs_left + out["contrast"]["summer_right"]
+                           + out["contrast"]["summer_angle"] + out["contrast"]["summer_rear"])
+    other_ratio, other_lo, other_hi = stats.rate_ratio(cw_other, win_days, cs_other, sum_days)
+    out["contrast"]["winter_other"] = cw_other
+    out["contrast"]["summer_other"] = cs_other
+    out["contrast"]["other_ratio"] = other_ratio
+    out["contrast"]["other_lo"] = other_lo
+    out["contrast"]["other_hi"] = other_hi
 
     # ---- within-intersection ---------------------------------------------
     # Crashes after dark may occur at a different set of intersections than daylight
@@ -286,3 +330,35 @@ def mechanism(df):
     out["concentration"] = conc
 
     return out
+
+
+# --------------------------------------------------------------------------
+# 3. Which signalized intersections see the most crashes overall?
+# --------------------------------------------------------------------------
+def top_intersections(df, n=None):
+    """The n signalized intersections with the most total crashes, 2016-2025.
+
+    Not used by the public report. For the city team to pick a small number of
+    intersections they can independently verify are Frisco-maintained, then
+    re-derive the seasonal left-turn / right-angle pattern themselves as a check
+    on the published finding.
+    """
+    n = n or C.TOP_N_INTERSECTIONS
+    sig = df[df["signal"]]
+    rows = []
+    for key, g in sig.groupby("key"):
+        total = len(g)
+        left = int(g["is_left"].sum())
+        right = int(g["is_right"].sum())
+        angle = int(g["is_angle"].sum())
+        rear = int(g["is_rear"].sum())
+        rows.append({
+            "intersection": key,
+            "total_crashes": total,
+            "left_turn_crashes": left,
+            "right_turn_crashes": right,
+            "right_angle_crashes": angle,
+            "rear_end_crashes": rear,
+            "other_crashes": total - (left + right + angle + rear),
+        })
+    return sorted(rows, key=lambda r: -r["total_crashes"])[:n]
