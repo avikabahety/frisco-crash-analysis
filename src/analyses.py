@@ -338,10 +338,8 @@ def mechanism(df):
 def top_intersections(df, n=None):
     """The n signalized intersections with the most total crashes, 2016-2025.
 
-    Not used by the public report. For the city team to pick a small number of
-    intersections they can independently verify are Frisco-maintained, then
-    re-derive the seasonal left-turn / right-angle pattern themselves as a check
-    on the published finding.
+    Shown as a table on the public report page under "Signalized intersections
+    with the most crashes overall".
     """
     n = n or C.TOP_N_INTERSECTIONS
     sig = df[df["signal"]]

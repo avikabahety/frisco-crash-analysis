@@ -246,9 +246,8 @@ def main():
         C.OUTPUT_DIR / "intersection_contrast.csv", index=False)
 
     # top_intersections.csv — the TOP_N_INTERSECTIONS signalized intersections with
-    # the most total crashes, 2016-2025. Not used by the public report; for the city
-    # team to pick a handful of intersections they can verify are Frisco-maintained
-    # and independently re-check the seasonal left-turn pattern themselves. Columns:
+    # the most total crashes, 2016-2025. Also shown as a table on the public report
+    # page under "Signalized intersections with the most crashes overall". Columns:
     #
     # intersection           normalised street-name pair
     # total_crashes          all crashes at this intersection, all hours, all seasons

@@ -100,9 +100,8 @@ MIN_INTERSECTION_CONTRAST = 3
 MIN_INTERSECTION_GAP = 5
 
 # Size of the "largest signalized intersections by total crash count" export
-# (top_intersections.csv). For the city team to independently spot-check the
-# darkness finding at a small number of intersections they can verify are
-# Frisco-maintained. Not used by the public report.
+# (top_intersections.csv), also shown as a table on the public report page under
+# "Signalized intersections with the most crashes overall".
 TOP_N_INTERSECTIONS = 25
 
 # ------------------------------------------------------------------- reporting

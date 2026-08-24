@@ -43,6 +43,13 @@ crashes are keyed to intersections.
 Record counts at each filter step are shown in the [results page](https://avikabahety.github.io/frisco-crash-analysis/)
 under "How the data was cut".
 
+## Reference table: intersections by total crash count
+
+`top_intersections.csv` and the "most crashes overall" table on the results page rank
+every signalised intersection (same population as above) by total crash count, all
+hours and seasons combined. It is not part of the darkness comparison, so it is not
+restricted to the sunset-transition hours used elsewhere in this document.
+
 ## Fields used
 
 The [CRIS](https://cris.dot.state.tx.us/public/Query/app/home) export carries 142
@@ -58,7 +65,7 @@ export versions.
 | `Street Name` | Intersection identity (first street) |
 | `Intersecting Street Name` | Intersection identity (second street) |
 | `Intersection Related` | The scope filter: intersection vs freeway mainlane vs driveway |
-| `Manner of Collision` | Crash type: left-turn, right-turn, right-angle, rear-end |
+| `Manner of Collision` | Crash type: left-turn, right-turn, right-angle, rear-end (plus "other," the residual not coded as any of the four) |
 | `Light Condition` | Dark vs daylight — the independent variable of the analysis |
 | `Traffic Control Type` | Restricts to signalised intersections; identifies flashing-yellow control |
 | `Contributing Factors` | Permissive vs protected fingerprint; impaired-driver flag |
