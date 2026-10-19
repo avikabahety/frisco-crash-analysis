@@ -9,14 +9,6 @@ import json
 
 import config as C
 
-# Frisco sunset, rounded to the hour it crosses. December ~17:25, June ~20:35.
-WINTER_SUNSET = 17.4
-SUMMER_SUNSET = 20.6
-# Frisco sunrise. December ~7:25am, June ~6:15am.
-WINTER_SUNRISE = 7.4
-SUMMER_SUNRISE = 6.25
-
-
 def _chart(dark, winter_field="winter_left_rate", summer_field="summer_left_rate",
            title="Left-turn crashes by hour of day", show_totals=False):
     """Crash rate by hour, winter against summer, with the darkness band.
@@ -45,12 +37,12 @@ def _chart(dark, winter_field="winter_left_rate", summer_field="summer_left_rate
         return T + ph - (v / peak) * ph
 
     # evening window: winter is dark but summer is still light
-    x0 = x(max(WINTER_SUNSET, lo))
-    x1 = x(min(SUMMER_SUNSET, hi))
+    x0 = x(max(C.WINTER_SUNSET, lo))
+    x1 = x(min(C.SUMMER_SUNSET, hi))
 
     # morning window: winter is still dark but summer is already light
-    mx0 = x(max(SUMMER_SUNRISE, lo))
-    mx1 = x(min(WINTER_SUNRISE, hi))
+    mx0 = x(max(C.SUMMER_SUNRISE, lo))
+    mx1 = x(min(C.WINTER_SUNRISE, hi))
 
     def path(field):
         pts = [f"{x(h):.1f},{y(dark['by_hour'][h][field]):.1f}" for h in hours]
@@ -115,10 +107,10 @@ def _row_note(h):
     a footnote below the table explains why.
     """
     if h in (6, 7, 17):                          return ""   # transition hours — see footnote
-    if h < SUMMER_SUNRISE:                        return "dark in both seasons"
-    if h < WINTER_SUNRISE:                        return "dark in winter, light in summer"
-    if h < WINTER_SUNSET:                         return "light in both seasons"
-    if h < SUMMER_SUNSET:                         return "dark in winter, light in summer"
+    if h < C.SUMMER_SUNRISE:                        return "dark in both seasons"
+    if h < C.WINTER_SUNRISE:                        return "dark in winter, light in summer"
+    if h < C.WINTER_SUNSET:                         return "light in both seasons"
+    if h < C.SUMMER_SUNSET:                         return "dark in winter, light in summer"
     return                                        "dark in both seasons"
 
 
@@ -191,10 +183,10 @@ def _chart_type_diff(dark):
         return T + ph - (v - y_min) / y_range * ph
 
     # Dark band (evening: winter dark, summer light)
-    x0 = x(max(WINTER_SUNSET, lo))
-    x1 = x(min(SUMMER_SUNSET, hi))
-    mx0 = x(max(SUMMER_SUNRISE, lo))
-    mx1 = x(min(WINTER_SUNRISE, hi))
+    x0 = x(max(C.WINTER_SUNSET, lo))
+    x1 = x(min(C.SUMMER_SUNSET, hi))
+    mx0 = x(max(C.SUMMER_SUNRISE, lo))
+    mx1 = x(min(C.WINTER_SUNRISE, hi))
 
     types = [
         ("left",  "var(--amber)", "left-turn"),
@@ -302,10 +294,10 @@ def _chart_type_ratio(dark):
         return T + ph - (v - y_min) / (y_max - y_min) * ph
 
     # Dark band (evening: winter dark, summer light)
-    x0 = x(max(WINTER_SUNSET, lo))
-    x1 = x(min(SUMMER_SUNSET, hi))
-    mx0 = x(max(SUMMER_SUNRISE, lo))
-    mx1 = x(min(WINTER_SUNRISE, hi))
+    x0 = x(max(C.WINTER_SUNSET, lo))
+    x1 = x(min(C.SUMMER_SUNSET, hi))
+    mx0 = x(max(C.SUMMER_SUNRISE, lo))
+    mx1 = x(min(C.WINTER_SUNRISE, hi))
 
     def valid_points(field):
         return [(h, dark["by_hour"][h][field]) for h in hours

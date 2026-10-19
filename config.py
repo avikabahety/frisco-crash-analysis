@@ -87,6 +87,15 @@ MIDDAY_HOURS = [10, 11, 12, 13, 14, 15]
 WINTER_MONTHS = [11, 12, 1, 2]
 SUMMER_MONTHS = [5, 6, 7, 8]
 
+# Frisco sunset and sunrise in decimal hours (17.4 = 5:24pm), used to shade the
+# darkness bands on the results page charts and to label each hour's light
+# condition. December sunset ~5:25pm, June ~8:35pm; December sunrise ~7:25am,
+# June ~6:15am.
+WINTER_SUNSET = 17.4
+SUMMER_SUNSET = 20.6
+WINTER_SUNRISE = 7.4
+SUMMER_SUNRISE = 6.25
+
 # Minimum crashes in a cell before a comparison is reported.
 MIN_CELL = 25
 # Minimum dark and daylight crashes at one intersection to enter the stratified test.
