@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Run the full Frisco crash analysis and write every artifact.
+"""Run the crash analysis for one city and write every artifact.
 
     python analyze.py --city frisco            run everything
     python analyze.py --city frisco --inspect  print the CRIS columns the export has
@@ -20,7 +20,7 @@ import pandas as pd
 
 import config as C
 from src import analyses, report
-from src.city import available_cities, use_city
+from src.city import available_cities, city_report, use_city
 from src.data import load
 from src.stats import stars
 
@@ -91,7 +91,7 @@ def main():
 
     if not C.CRASH_FILE.exists():
         print(f"Crash export not found: {C.CRASH_FILE}")
-        print("Export from https://cris.dot.state.tx.us (Query -> City = FRISCO ->")
+        print(f"Export from https://cris.dot.state.tx.us (Query -> City = {C.CITY_NAME.upper()} ->")
         print("crash-level Attribute List -> CSV) and place it there. See README.")
         sys.exit(1)
 
@@ -154,11 +154,12 @@ def main():
   CONTROL HOUR  ({fh(C.CONTROL_HOUR)}, light in both seasons — no effect expected)
     left-turn ratio {ctrl['left_ratio']:.2f}x""" if ctrl else "    no data")
 
+    h0 = C.CONTRAST_HOURS[0]   # first contrast hour, for the "rates not shares" line
     print(f"""
   CHECKS
     dry pavement only     {dark['dry_only']['diff_pp']:+.1f} pp  p={dark['dry_only']['p']:.6f} {stars(dark['dry_only']['p'])}
     right-turn placebo    {dark['placebo']['right']['diff_pp']:+.1f} pp  p={dark['placebo']['right']['p']:.4f} {stars(dark['placebo']['right']['p'])}
-    rates not shares      {fh(18)}: left {dark['by_hour'].get(18, {}).get('left_ratio', 0):.2f}x vs all {dark['by_hour'].get(18, {}).get('all_ratio', 0):.2f}x  ({fh(c['hours'][0])}-{fh(c['hours'][-1] + 1)} combined: {c['ratio']:.2f}x)
+    rates not shares      {fh(h0)}: left {dark['by_hour'].get(h0, {}).get('left_ratio', 0):.2f}x vs all {dark['by_hour'].get(h0, {}).get('all_ratio', 0):.2f}x  ({fh(c['hours'][0])}-{fh(c['hours'][-1] + 1)} combined: {c['ratio']:.2f}x)
     within intersection   OR {wi['odds_ratio']:.2f}  p={wi['p']:.6f} {stars(wi['p'])}  ({wi['agree']}/{wi['n_strata']} move predicted way)
     excluding impaired    {dark['sober_only']['diff_pp']:+.1f} pp  p={dark['sober_only']['p']:.6f} {stars(dark['sober_only']['p'])}
 
@@ -271,7 +272,7 @@ def main():
     pd.DataFrame(top).to_csv(C.OUTPUT_DIR / "top_intersections.csv", index=False)
 
     report.write_json(dark, mech)
-    page = report.render(dark, mech, funnel, top)
+    page = city_report().render(dark, mech, funnel, top)
 
     out = C.OUTPUT_DIR.relative_to(C.ROOT)
     written = [str(page.relative_to(C.ROOT))] + [

@@ -9,7 +9,7 @@ import json
 
 import config as C
 
-def _chart(dark, winter_field="winter_left_rate", summer_field="summer_left_rate",
+def chart(dark, winter_field="winter_left_rate", summer_field="summer_left_rate",
            title="Left-turn crashes by hour of day", show_totals=False):
     """Crash rate by hour, winter against summer, with the darkness band.
 
@@ -83,7 +83,7 @@ def _chart(dark, winter_field="winter_left_rate", summer_field="summer_left_rate
     return f'''<svg viewBox="0 0 {W} {H}" class="chart" role="img"
    aria-label="{title}, winter versus summer">
   <text x="{L}" y="22" class="title">{title}</text>
-  <text x="{L}" y="40" class="subtitle">Frisco signalised intersections, {dark['span']['start_year']}&ndash;{dark['span']['end_year']}</text>
+  <text x="{L}" y="40" class="subtitle">{C.CITY_NAME} signalised intersections, {dark['span']['start_year']}&ndash;{dark['span']['end_year']}</text>
   <rect x="{mx0:.1f}" y="{T}" width="{max(mx1 - mx0, 0):.1f}" height="{ph}" class="band"/>
   {'<text x="' + f"{(mx0 + mx1) / 2:.1f}" + f'" y="{T + 13}" class="bandlab" text-anchor="middle">dark in winter,</text><text x="' + f"{(mx0 + mx1) / 2:.1f}" + f'" y="{T + 25}" class="bandlab" text-anchor="middle">light in summer</text>' if mx1 - mx0 > 60 else ''}
   <rect x="{x0:.1f}" y="{T}" width="{max(x1 - x0, 0):.1f}" height="{ph}" class="band"/>
@@ -100,13 +100,13 @@ def _chart(dark, winter_field="winter_left_rate", summer_field="summer_left_rate
 </svg>'''
 
 
-def _row_note(h):
+def _row_note(h, transition_hours):
     """Annotation for the hour table describing the light condition.
 
-    Hours where light conditions change mid-hour (6am, 7am, 5pm) return an empty string;
-    a footnote below the table explains why.
+    Hours where light conditions change mid-hour (transition_hours, set by the city's
+    page) return an empty string; a footnote below the table explains why.
     """
-    if h in (6, 7, 17):                          return ""   # transition hours — see footnote
+    if h in transition_hours:                    return ""   # transition hours — see footnote
     if h < C.SUMMER_SUNRISE:                        return "dark in both seasons"
     if h < C.WINTER_SUNRISE:                        return "dark in winter, light in summer"
     if h < C.WINTER_SUNSET:                         return "light in both seasons"
@@ -117,22 +117,22 @@ def _row_note(h):
 _ROW_TYPES = ["left", "right", "angle", "rear"]
 
 
-def _fmt_ratio(r):
+def fmt_ratio(r):
     """Rare crash types can hit zero winter or summer crashes in a given hour,
     where the ratio is undefined (nan) rather than misleadingly large or small."""
     return "&mdash;" if r != r else f"{r:.2f}&times;"
 
 
-def _rows(dark):
+def hour_rows(dark, transition_hours):
     out = []
     for h in sorted(dark["by_hour"]):
         v = dark["by_hour"][h]
         ctrl = v["is_control"]
-        note = _row_note(h)
+        note = _row_note(h, transition_hours)
         cells = "".join(
             f'<td class="m{" grp" if t != _ROW_TYPES[0] else ""}">{v[f"winter_{t}_rate"]:.1f}</td>'
             f'<td class="m">{v[f"summer_{t}_rate"]:.1f}</td>'
-            f'<td class="m b">{_fmt_ratio(v[f"{t}_ratio"])}</td>'
+            f'<td class="m b">{fmt_ratio(v[f"{t}_ratio"])}</td>'
             for t in _ROW_TYPES
         )
         out.append(f'''<tr class="{'ctrl' if ctrl else ''}">
@@ -153,7 +153,7 @@ def _sites(mech, limit=12):
     </tr>''' for s in mech["sites"][:limit])
 
 
-def _chart_type_diff(dark):
+def chart_type_diff(dark):
     """Difference in crash-type share (winter% − summer%) by hour.
 
     Four lines: left-turn (amber), right-turn (sky), angle (green), rear-end (red).
@@ -249,7 +249,7 @@ def _chart_type_diff(dark):
 <div class="key" style="padding-top:6px">{key}</div>'''
 
 
-def _chart_type_ratio(dark):
+def chart_type_ratio(dark):
     """Winter/summer rate ratio by hour, one line per crash type.
 
     Three lines: left-turn (amber), angle (green), rear-end (red). A horizontal
@@ -369,7 +369,7 @@ def _chart_type_ratio(dark):
 <div class="key" style="padding-top:6px">{key}</div>'''
 
 
-def _intersection_contrast_rows(dark):
+def intersection_contrast_rows(dark):
     """Table rows for the intersection seasonal contrast, ranked by rate gap.
 
     All intersections clearing MIN_INTERSECTION_CONTRAST are shown. Direction
@@ -394,7 +394,7 @@ def _intersection_contrast_rows(dark):
     return "\n".join(rows)
 
 
-def _top_rows(top):
+def top_rows(top):
     return "\n".join(f'''<tr>
       <td>{t['intersection']}</td>
       <td class="m b">{t['total_crashes']}</td>
@@ -406,43 +406,46 @@ def _top_rows(top):
     </tr>''' for t in top)
 
 
-def render(dark, mech, funnel, top, path=None):
-    path = path or (C.DOCS_DIR / "index.html")
+def window_rates(dark):
+    """Crashes per 1,000 season-days for the summary table: all crashes over the
+    full day, all crashes in the contrast hours, and left-turn crashes in the
+    contrast hours, for winter and summer."""
     c = dark["contrast"]
-    wi = dark["within_intersection"]
-    conc = mech["concentration"]
-    y0, y1 = dark["span"]["start_year"], dark["span"]["end_year"]
-    span = f"{y0}&ndash;{y1}"
-
-    # Pre-compute values for the zoom-in summary table
+    bh = dark["by_hour"]
     win_days = dark["season_days"]["winter"]
     sum_days = dark["season_days"]["summer"]
-    _bh = dark["by_hour"]
-    _day_w_rate = sum(v["winter_all_rate"] for v in _bh.values())
-    _day_s_rate = sum(v["summer_all_rate"] for v in _bh.values())
-    _eve_w_rate = sum(_bh[h2]["winter_all_rate"] for h2 in C.CONTRAST_HOURS if h2 in _bh)
-    _eve_s_rate = sum(_bh[h2]["summer_all_rate"] for h2 in C.CONTRAST_HOURS if h2 in _bh)
-    _lt_w_rate  = c["winter_left"] / win_days * 1000
-    _lt_s_rate  = c["summer_left"] / sum_days * 1000
+    return {
+        "day_w": sum(v["winter_all_rate"] for v in bh.values()),
+        "day_s": sum(v["summer_all_rate"] for v in bh.values()),
+        "eve_w": sum(bh[h]["winter_all_rate"] for h in C.CONTRAST_HOURS if h in bh),
+        "eve_s": sum(bh[h]["summer_all_rate"] for h in C.CONTRAST_HOURS if h in bh),
+        "lt_w": c["winter_left"] / win_days * 1000,
+        "lt_s": c["summer_left"] / sum_days * 1000,
+    }
 
-    funnel_rows = []
+
+def funnel_rows(funnel):
+    """Table rows for the filter funnel; the last row (the analysis population) bold."""
+    rows = []
     for i, (label, n) in enumerate(funnel):
         bold = i == len(funnel) - 1
         num_cls = ' class="m b"' if bold else ' class="m"'
         lbl_cls = ' class="b"' if bold else ''
-        funnel_rows.append(
+        rows.append(
             f'<tr><td{num_cls}>{n:,}</td><td{lbl_cls}>{label}</td></tr>')
-    funnel_rows = "\n".join(funnel_rows)
+    return "\n".join(rows)
 
-    html = f'''<!doctype html>
+
+def page(body, description, span):
+    """Wrap a city's page text in the shared frame: document head and styling, top
+    bar, and footer. `body` runs from the hero header through </main>."""
+    head = f'''<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{C.SITE_TITLE} &mdash; Frisco, TX</title>
-<meta name="description" content="Winter evening crashes at Frisco signalised
- intersections run higher than summer. Left-turn crashes drive a disproportionate
- share of that difference. An analysis of TxDOT CRIS records, {span}.">
+<title>{C.SITE_TITLE} &mdash; {C.CITY_NAME}, TX</title>
+<meta name="description" content="{description}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -569,342 +572,26 @@ def render(dark, mech, funnel, top, path=None):
 <body>
 
 <div class="top"><div class="wrap">
-  <span class="tag">Frisco, TX &middot; signalised intersections</span>
+  <span class="tag">{C.CITY_NAME}, TX &middot; signalised intersections</span>
   <span class="src">Based on TxDOT CRIS &middot; {span}</span>
 </div></div>
 
-<header class="hero"><div class="wrap">
-  <h1>Winter evening crashes at signalised intersections run <em>measurably higher.</em></h1>
-  <p class="sub">Winter evening crashes at Frisco&rsquo;s signalised intersections run
-  measurably higher than summer. Left-turn crashes drive a disproportionate share of
-  that difference.</p>
-  <div class="figure">
-    {_chart(dark, "winter_all_rate", "summer_all_rate", "All crashes by hour of day")}
-    <div class="key">
-      <span><i style="background:var(--amber)"></i>winter (Nov&ndash;Feb)</span>
-      <span><i style="background:var(--sky)"></i>summer (May&ndash;Aug)</span>
-    </div>
-  </div>
-</div></header>
-
-<main class="wrap">
-
-  <section class="sec">
-    <h2><span class="eye">the numbers</span>Zooming in on the 6&ndash;8pm window</h2>
-    <p>Overall crash rates are nearly equal across seasons. The gap opens at
-    6&ndash;8pm &mdash; when winter is dark and summer is still light &mdash; and left-turn
-    crashes account for a disproportionate share of it.</p>
-    <table class="tab">
-      <thead><tr>
-        <th style="text-align:left">Crashes per 1,000 days</th>
-        <th>Winter</th><th>Summer</th>
-        <th>Winter&thinsp;/&thinsp;Summer ratio</th>
-      </tr></thead>
-      <tbody>
-        <tr>
-          <td>All crashes &mdash; full day (6am&ndash;10pm)</td>
-          <td class="m">{_day_w_rate:.0f}</td><td class="m">{_day_s_rate:.0f}</td>
-          <td class="m">{_day_w_rate / _day_s_rate:.2f}&times;</td>
-        </tr>
-        <tr>
-          <td>All crashes &mdash; 6&ndash;8pm window</td>
-          <td class="m">{_eve_w_rate:.0f}</td><td class="m">{_eve_s_rate:.0f}</td>
-          <td class="m">{_eve_w_rate / _eve_s_rate:.2f}&times;</td>
-        </tr>
-        <tr class="sig">
-          <td>Left-turn crashes &mdash; 6&ndash;8pm window</td>
-          <td class="m">{_lt_w_rate:.0f}</td><td class="m">{_lt_s_rate:.0f}</td>
-          <td class="m">{_lt_w_rate / _lt_s_rate:.2f}&times;</td>
-        </tr>
-      </tbody>
-    </table>
-  </section>
-
-  <section class="sec">
-    <h2><span class="eye">crash types</span>Left-turn crashes stand out in the
-    evening window</h2>
-    <p>The chart below shows each crash type's share of that hour's crashes, winter
-    minus summer &mdash; positive values mean a bigger share in winter, negative means
-    a bigger share in summer, zero means no difference. In the evening hours where
-    winter is dark and summer is still light, left-turn crashes show a pronounced
-    positive difference.</p>
-    <div class="figure">
-      {_chart_type_diff(dark)}
-    </div>
-    <p class="cap" style="margin-top:12px">To understand the crash type mix chart,
-    here is an example: 7pm: right-angle crashes made up 19 of 151 winter crashes
-    that hour (12.6%) versus 26 of 98 summer crashes (26.5%) &mdash; a difference of
-    &minus;13.9 percentage points, the point plotted for right-angle at 7pm above.
-    This measures each type's share of that hour's crash mix, not how often it
-    happens.</p>
-    <p style="margin-top:18px"><b>Same comparison, as a rate ratio:</b> The chart
-    below shows crash type (left-turn, right-angle and rear-end), plotted as a
-    winter&thinsp;/&thinsp;summer rate ratio. Right-turn is left off this particular
-    chart: its per-hour counts are small so one crash can swing its ratio
-    several-fold, which would stretch the shared scale and hide the other three
-    lines' real signal &mdash; but right-turn ratio is still shown in full in the
-    table below. A gap in a line means too few crashes that hour in one season for a
-    ratio to be defined.</p>
-    <div class="figure">
-      {_chart_type_ratio(dark)}
-    </div>
-    <p style="margin-top:18px">At 6&ndash;8pm, left-turn crashes run at
-    {_lt_w_rate:.0f}&nbsp;per 1,000 winter days versus {_lt_s_rate:.0f}&nbsp;per
-    1,000 summer days &mdash; a rate ratio of {c['ratio']:.2f}&times;
-    (95%&nbsp;CI&nbsp;{c['lo']:.2f}&ndash;{c['hi']:.2f}). Those hours are dark in
-    winter and light in summer.</p>
-    <p style="margin-top:18px">The same 6&ndash;8pm window, all five crash types
-    side by side:</p>
-    <table class="tab">
-      <thead><tr>
-        <th style="text-align:left">Crashes per 1,000 days &mdash; 6&ndash;8pm window</th>
-        <th>Winter</th><th>Summer</th>
-        <th>Winter&thinsp;/&thinsp;Summer ratio</th>
-      </tr></thead>
-      <tbody>
-        <tr class="sig">
-          <td>Left-turn</td>
-          <td class="m">{_lt_w_rate:.0f}</td><td class="m">{_lt_s_rate:.0f}</td>
-          <td class="m">{c['ratio']:.2f}&times;</td>
-        </tr>
-        <tr>
-          <td>Right-turn</td>
-          <td class="m">{c['winter_right'] / win_days * 1000:.0f}</td>
-          <td class="m">{c['summer_right'] / sum_days * 1000:.0f}</td>
-          <td class="m">{_fmt_ratio(c['right_ratio'])}</td>
-        </tr>
-        <tr>
-          <td>Right-angle</td>
-          <td class="m">{c['winter_angle'] / win_days * 1000:.0f}</td>
-          <td class="m">{c['summer_angle'] / sum_days * 1000:.0f}</td>
-          <td class="m">{_fmt_ratio(c['angle_ratio'])}</td>
-        </tr>
-        <tr>
-          <td>Rear-end</td>
-          <td class="m">{c['winter_rear'] / win_days * 1000:.0f}</td>
-          <td class="m">{c['summer_rear'] / sum_days * 1000:.0f}</td>
-          <td class="m">{_fmt_ratio(c['rear_ratio'])}</td>
-        </tr>
-        <tr>
-          <td>Other</td>
-          <td class="m">{c['winter_other'] / win_days * 1000:.0f}</td>
-          <td class="m">{c['summer_other'] / sum_days * 1000:.0f}</td>
-          <td class="m">{_fmt_ratio(c['other_ratio'])}</td>
-        </tr>
-      </tbody>
-    </table>
-    <p class="cap">The "other" category includes single-vehicle crashes,
-    same-direction sideswipes, and other less common collision patterns such as two
-    vehicles both turning left, or a left-turning vehicle crashing into an oncoming
-    right-turning vehicle.</p>
-  </section>
-
-  <section class="sec">
-    <h2><span class="eye">comparison</span>The pattern is most prominent when light conditions differ</h2>
-    <p class="lede">Sunset in Frisco falls around 5:25pm in December and 8:35pm in
-    June; sunrise around 7:25am in December and 6:15am in June. The chart covers 6am
-    to 10pm, with two windows where winter is dark and summer is light: around 7am and
-    from 6&ndash;8pm.</p>
-    <p>Outside those windows winter and summer left-turn crashes track closely &mdash;
-    at midday both seasons are light, after 9pm both are dark. A seasonal factor
-    unrelated to light &mdash; school-term traffic, holiday driving, winter road
-    conditions &mdash; would be expected to affect those hours too. It does not.</p>
-    <div class="figure">
-      {_chart(dark)}
-      <div class="key">
-        <span><i style="background:var(--amber)"></i>winter (Nov&ndash;Feb)</span>
-        <span><i style="background:var(--sky)"></i>summer (May&ndash;Aug)</span>
-      </div>
-    </div>
-    <div class="figure" style="margin-top:16px">
-      {_chart(dark, "winter_right_rate", "summer_right_rate", "Right-turn crashes by hour of day")}
-      <div class="key">
-        <span><i style="background:var(--amber)"></i>winter (Nov&ndash;Feb)</span>
-        <span><i style="background:var(--sky)"></i>summer (May&ndash;Aug)</span>
-      </div>
-    </div>
-    <div class="figure" style="margin-top:16px">
-      {_chart(dark, "winter_angle_rate", "summer_angle_rate", "Right-angle crashes by hour of day")}
-      <div class="key">
-        <span><i style="background:var(--amber)"></i>winter (Nov&ndash;Feb)</span>
-        <span><i style="background:var(--sky)"></i>summer (May&ndash;Aug)</span>
-      </div>
-    </div>
-    <div class="figure" style="margin-top:16px">
-      {_chart(dark, "winter_rear_rate", "summer_rear_rate", "Rear-end crashes by hour of day")}
-      <div class="key">
-        <span><i style="background:var(--amber)"></i>winter (Nov&ndash;Feb)</span>
-        <span><i style="background:var(--sky)"></i>summer (May&ndash;Aug)</span>
-      </div>
-    </div>
-    <p style="margin-top:28px">Below is the same comparison, broken out by crash type,
-    in tabular format.</p>
-    <div style="overflow-x:auto">
-    <table class="tab">
-      <thead>
-        <tr>
-          <th rowspan="2">Hour</th>
-          <th colspan="3">Left-turn</th>
-          <th colspan="3" class="grp">Right-turn</th>
-          <th colspan="3" class="grp">Right-angle</th>
-          <th colspan="3" class="grp">Rear-end</th>
-          <th rowspan="2" class="grp">All-crash<br>ratio</th>
-          <th rowspan="2"></th>
-        </tr>
-        <tr>
-          <th style="text-align:right">Winter</th><th>Summer</th><th>Ratio</th>
-          <th class="grp">Winter</th><th>Summer</th><th>Ratio</th>
-          <th class="grp">Winter</th><th>Summer</th><th>Ratio</th>
-          <th class="grp">Winter</th><th>Summer</th><th>Ratio</th>
-        </tr>
-      </thead>
-      <tbody>{_rows(dark)}</tbody>
-    </table>
-    </div>
-    <p class="cap">Winter and summer columns are crashes per 1,000 season-days, not
-    raw counts &mdash; that keeps every type directly comparable despite winter and
-    summer covering a different number of calendar days. Ratios are
-    winter&thinsp;/&thinsp;summer.</p>
-    <p class="cap">6am, 7am, and 5pm are unlabelled: light conditions change
-    mid-hour at those times and a single label would misrepresent part of each hour.</p>
-  </section>
-
-  <section class="sec">
-    <h2><span class="eye">robustness</span>Checks performed</h2>
-    <p>Each of the following would be expected to remove the difference if the stated
-    alternative explanation held. The observed difference persists in each case.</p>
-    <ul class="checks">
-      <li><span class="mark">&mdash;</span><div>
-        <b>Dry pavement only.</b> Winter is both darker and wetter. Restricting to
-        crashes where the officer recorded dry road surface (from the CRIS surface
-        condition field) leaves the difference unchanged, ruling out road conditions
-        as an explanation.
-        <span class="det">dry pavement only: {dark['dry_only']['diff_pp']:+.1f}&nbsp;pp,
-        p&nbsp;&lt;&nbsp;0.001</span>
-      </div></li>
-      <li><span class="mark">&mdash;</span><div>
-        <b>Right-turn comparison.</b> If night driving were generally more difficult,
-        other turning movements would shift similarly. Right-turn crashes show no
-        change in the same window, making a general night-driving explanation unlikely.
-        <span class="det">left-turn {dark['placebo']['left']['diff_pp']:+.1f}&nbsp;pp
-        &middot; right-turn {dark['placebo']['right']['diff_pp']:+.1f}&nbsp;pp
-        &middot; right-angle {dark['placebo']['angle']['diff_pp']:+.1f}&nbsp;pp</span>
-      </div></li>
-      <li><span class="mark">&mdash;</span><div>
-        <b>Rates, not counts.</b> Left-turn crashes are compared as rates per calendar
-        day rather than as shares of total crashes, so a shrinking denominator cannot
-        produce a spurious rise.
-        <span class="det">6pm: {dark['by_hour'].get(18, {}).get('left_ratio', 0):.2f}&times;
-        left-turn vs {dark['by_hour'].get(18, {}).get('all_ratio', 0):.2f}&times;
-        all crashes</span>
-      </div></li>
-    </ul>
-    <p class="cap">The association also survives stratification by intersection
-    (Mantel&ndash;Haenszel OR&nbsp;{wi['odds_ratio']:.2f} across {wi['n_strata']}
-    intersections, {wi['agree']}/{wi['n_strata']} moving the predicted way) and
-    exclusion of impaired-driver crashes
-    ({dark['sober_only']['diff_pp']:+.1f}&nbsp;pp, impairment recorded in
-    {dark['sober_only']['impaired_pct']:.1f}% of crashes in these hours).</p>
-  </section>
-
-  <section class="sec">
-    <h2><span class="eye">where to look</span>Intersections worth a closer look</h2>
-    <p>These intersections show the largest observed gap between winter and summer
-    left-turn crashes during the 6&ndash;8pm window. Two of these intersections are on
-    SH121 and are likely managed by the City of Plano. The remaining two intersections
-    represent a starting point for Frisco&rsquo;s evaluation of whether any
-    countermeasure is appropriate to reduce winter left-turn crashes.</p>
-    <table class="tab">
-      <thead><tr>
-        <th>Intersection</th>
-        <th>Winter crashes</th><th>Summer crashes</th>
-        <th>Rate gap</th><th>Rate ratio [95%&nbsp;CI]</th>
-        <th>Failed to yield</th>
-      </tr></thead>
-      <tbody>{_intersection_contrast_rows(dark)}</tbody>
-    </table>
-    <p class="cap">Crashes are counts over {span} during 6&ndash;8pm only. Rate gap is
-    winter minus summer crashes per 1,000 season-days. Failed-to-yield column shows
-    the share of left-turn crashes between 6&ndash;10pm where the officer recorded
-    dark light conditions, citing failure to yield while turning left &mdash; the
-    officer-recorded signature of a permissive left-turn phase. Sample sizes at individual intersections are small
-    and confidence intervals are wide.</p>
-  </section>
-
-  <section class="sec">
-    <h2><span class="eye">limitations</span>What this analysis does not establish</h2>
-    <div class="notclaim">
-      <h3>These bound the interpretation of everything above.</h3>
-      <ul>
-        <li><b>Exposure is unknown.</b> The number of left turns attempted after dark
-        is not available. Traffic volumes are lower at night, so the risk per turn
-        attempted is likely higher than these figures indicate, making the estimates
-        conservative.</li>
-        <li><b>Reportable crashes only.</b> CRIS contains crashes for which an officer
-        filed a CR-3: injury, death, or $1,000+ in property damage. Minor crashes and
-        those without police response are not included.</li>
-        <li><b>Whether the increase concentrates at specific intersection types is not
-        confirmed.</b> The analysis attempted to compare intersections that appear more
-        permissive against those that appear less so; the two groups are not
-        statistically distinguishable
-        (p&nbsp;=&nbsp;{conc.get('p', float('nan')):.2f}). Intersections with
-        protected-only phasing produce few left-turn crashes and rarely meet the
-        minimum count needed to be classified, so the comparison is inherently
-        limited.</li>
-      </ul>
-    </div>
-  </section>
-
-  <section class="sec">
-    <h2><span class="eye">for reference</span>Signalized intersections with the most crashes overall</h2>
-    <p>For background context, the table below ranks Frisco's signalized
-    intersections by total crash count of any type, all hours and seasons combined,
-    {span}.</p>
-    <div style="overflow-x:auto">
-    <table class="tab">
-      <thead><tr>
-        <th>Intersection</th>
-        <th>Total</th><th>Left-turn</th><th>Right-turn</th>
-        <th>Right-angle</th><th>Rear-end</th><th>Other</th>
-      </tr></thead>
-      <tbody>{_top_rows(top)}</tbody>
-    </table>
-    </div>
-    <p class="cap">Not every intersection listed here is necessarily maintained by
-    the City of Frisco. Several sit on state highways (US380, SH121) or roads shared
-    with neighboring cities, which may fall under TxDOT's or another jurisdiction's
-    authority.</p>
-  </section>
-
-  <section class="sec">
-    <h2><span class="eye">method</span>How the data was cut</h2>
-    <p>All crash records held by TxDOT for Frisco, {span}, narrowed to those that can
-    be placed at a named intersection at a known time.</p>
-    <table class="tab">
-      <thead><tr><th>Records</th><th style="text-align:left">Step</th></tr></thead>
-      <tbody>{funnel_rows}</tbody>
-    </table>
-    <p class="cap">Freeway mainlane crashes are excluded: none carry a cross street and
-    their crash-type distribution is characteristic of a freeway, not an intersection.
-    Driveway-access crashes are excluded. The analyses above use
-    the signalised subset, since left-turn phasing exists only at a signal.</p>
-    <p><a href="{C.REPO_URL}" style="color:#B87A18;font-weight:600;">Code, data and
-    full method &rarr;</a></p>
-  </section>
-
-</main>
-
-<footer><div class="wrap">
+'''
+    foot = f'''<footer><div class="wrap">
   <p>An independent analysis of public TxDOT CRIS crash records. Not affiliated with
-  the City of Frisco or TxDOT. Any errors are the author&rsquo;s.</p>
+  the City of {C.CITY_NAME} or TxDOT. Any errors are the author&rsquo;s.</p>
   <p style="margin-top:14px"><a href="{C.REPO_URL}">Repository</a> &middot;
   <a href="https://cris.dot.state.tx.us/public/Query/app/home">CRIS data source</a></p>
 </div></footer>
 
 </body>
 </html>'''
+    return head + body + foot
 
-    path.parent.mkdir(parents=True, exist_ok=True)
+
+def write_page(html, path=None):
+    """Write the results page to docs/<city>/index.html."""
+    path = path or (C.DOCS_DIR / "index.html")
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(html, encoding="utf-8")
     return path

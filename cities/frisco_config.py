@@ -62,4 +62,6 @@ WINTER_SUNRISE = 7.4
 SUMMER_SUNRISE = 6.25
 
 # ------------------------------------------------------------------- reporting
-SITE_SUBTITLE = "Frisco, TX \u00b7 TxDOT CRIS crash records, 2016\u20132025"
+# Used by the shared page header, footer and chart subtitles. The page text
+# itself is in cities/frisco_report.py.
+CITY_NAME = "Frisco"
