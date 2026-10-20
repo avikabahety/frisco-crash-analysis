@@ -258,7 +258,8 @@ def render(dark, mech, funnel, top):
         change in the same window, making a general night-driving explanation unlikely.
         <span class="det">left-turn {dark['placebo']['left']['diff_pp']:+.1f}&nbsp;pp
         &middot; right-turn {dark['placebo']['right']['diff_pp']:+.1f}&nbsp;pp
-        &middot; right-angle {dark['placebo']['angle']['diff_pp']:+.1f}&nbsp;pp</span>
+        &middot; right-angle {dark['placebo']['angle']['diff_pp']:+.1f}&nbsp;pp
+        &middot; rear-end {dark['placebo']['rear']['diff_pp']:+.1f}&nbsp;pp</span>
       </div></li>
       <li><span class="mark">&mdash;</span><div>
         <b>Rates, not counts.</b> Left-turn crashes are compared as rates per calendar
