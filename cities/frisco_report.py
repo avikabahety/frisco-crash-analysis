@@ -9,8 +9,10 @@ import config as C
 from src import report as R
 
 # Hours where light conditions change mid-hour, left unlabelled in the hour table
-# (Frisco: summer sunrise ~6:15am, winter sunrise ~7:25am, winter sunset ~5:25pm).
-TRANSITION_HOURS = (6, 7, 17)
+# (Frisco: summer sunrise ~6:15am, winter sunrise ~7:25am, winter sunset ~5:25pm,
+# summer sunset ~7:50-8:40pm from May to August). Keep the hour-table caption below
+# in step with this list.
+TRANSITION_HOURS = (6, 7, 17, 20)
 
 
 def render(dark, mech, funnel, top):
@@ -167,8 +169,10 @@ def render(dark, mech, funnel, top):
     <h2><span class="eye">comparison</span>The pattern is most prominent when light conditions differ</h2>
     <p class="lede">Sunset in Frisco falls around 5:25pm in December and 8:35pm in
     June; sunrise around 7:25am in December and 6:15am in June. The chart covers 6am
-    to 10pm, with two windows where winter is dark and summer is light: around 7am and
-    from 6&ndash;8pm.</p>
+    to 10pm. Winter is dark while summer is light in two windows: in the evening from
+    6 to 8pm, and briefly in the early morning before 7am. The evening window is the
+    one this analysis tests; the morning window is shorter and has too few crashes for
+    a reliable comparison.</p>
     <p>Outside those windows winter and summer left-turn crashes track closely &mdash;
     at midday both seasons are light, after 9pm both are dark. A seasonal factor
     unrelated to light &mdash; school-term traffic, holiday driving, winter road
@@ -230,7 +234,7 @@ def render(dark, mech, funnel, top):
     summer covering a different number of calendar days. Ratios are
     winter&thinsp;/&thinsp;summer. The shaded row ({R.hour_label(C.COMPARISON_HOUR)}) is the
     comparison hour: daylight in both seasons.</p>
-    <p class="cap">6am, 7am, and 5pm are unlabelled: light conditions change
+    <p class="cap">6am, 7am, 5pm, and 8pm are unlabelled: light conditions change
     mid-hour at those times and a single label would misrepresent part of each hour.</p>
   </section>
 
