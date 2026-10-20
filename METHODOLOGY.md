@@ -1,5 +1,10 @@
 # Methodology
 
+The method below is applied identically to every city in this repository. Settings that
+differ by city — the data file, the cutoff date, street aliases and sunset-based hours —
+are in `cities/<city>_config.py`; everything else is in `config.py`. Figures and examples
+in this document describe Frisco.
+
 ## Data
 
 [TxDOT Crash Records Information System (CRIS)](https://cris.dot.state.tx.us/public/Query/app/home),
@@ -14,7 +19,7 @@ are absent.
 **Analysis is restricted to complete calendar years 2016–2025.** A crash enters
 [CRIS](https://cris.dot.state.tx.us/public/Query/app/home) only after an officer files
 a CR-3 and TxDOT processes it, so the data entry for final months may be incomplete. 
-Thus the partial 2026 data is excluded. The cutoff date is `config.ANALYSIS_END`; `check_completeness.py`
+Thus the partial 2026 data is excluded. The cutoff date is `ANALYSIS_END` in `cities/frisco_config.py`; `check_completeness.py --city frisco`
 compares recent months against their historical levels to confirm where reporting has
 settled.
 
@@ -26,7 +31,7 @@ settled.
 | Exclude `NON INTERSECTION` | Freeway mainlane. Zero of 12,162 carry a cross street, and their crash-type signature is a freeway's: single-vehicle, rear-end, sideswipe, with right-angle crashes at 2.6% against 15% city-wide. |
 | Exclude `DRIVEWAY ACCESS` | Excluded. |
 | Both street names present, no self-pairs | An intersection requires two distinct street names. Isolated records where both fields carry the same name (e.g. `LEGACY DR & LEGACY DR`) are excluded as malformed. |
-| Signalised only, for the main analyses | Left-turn phasing only exists at a signal. |
+| Signalized only, for the main analyses | Left-turn phasing only exists at a signal. |
 
 **Intersection identity** is the normalised, order-independent street-name pair. Street
 names are canonicalised before pairing: route numbers are standardised (`SH 121`,
@@ -37,23 +42,23 @@ same road under either designation. Dallas Pkwy and the Dallas North Tollway are
 roads and are not combined.
 
 Pooled results — the rate ratio, the dark/daylight comparison, the robustness checks and
-the comparison hour — are computed across all signalised crashes and do not depend on how
+the comparison hour — are computed across all signalized crashes and do not depend on how
 crashes are keyed to intersections.
 
-Record counts at each filter step are shown in the [results page](https://avikabahety.github.io/frisco-crash-analysis/)
+Record counts at each filter step are shown in the [results page](https://avikabahety.github.io/frisco-crash-analysis/frisco/)
 under "How the data was cut".
 
 ## Reference table: intersections by total crash count
 
 `top_intersections.csv` and the "most crashes overall" table on the results page rank
-every signalised intersection (same population as above) by total crash count, all
+every signalized intersection (same population as above) by total crash count, all
 hours and seasons combined. It is not part of the darkness comparison, so it is not
 restricted to the sunset-transition hours used elsewhere in this document.
 
 ## Fields used
 
 The [CRIS](https://cris.dot.state.tx.us/public/Query/app/home) export carries 142
-columns, out of which 11 are used. Run `python analyze.py --inspect` to print your
+columns, out of which 11 are used. Run `python analyze.py --city frisco --inspect` to print your
 export's header and confirm each one is present — CRIS field names may vary between
 export versions.
 
@@ -67,7 +72,7 @@ export versions.
 | `Intersection Related` | The scope filter: intersection vs freeway mainlane vs driveway |
 | `Manner of Collision` | Crash type: left-turn, right-turn, right-angle, rear-end (plus "other," the residual not coded as any of the four) |
 | `Light Condition` | Dark vs daylight — the independent variable of the analysis |
-| `Traffic Control Type` | Restricts to signalised intersections; identifies flashing-yellow control |
+| `Traffic Control Type` | Restricts to signalized intersections; identifies flashing-yellow control |
 | `Contributing Factors` | Permissive vs protected fingerprint; impaired-driver flag |
 | `Surface Condition` | The dry-pavement-only robustness check |
 
@@ -155,7 +160,7 @@ tested and is not resolved by this data.
   classified. The comparison is closer to "more permissive" against "less permissive"
   than to permissive against protected.
 
-The result is recorded in `results.json` and stated on the [results page](https://avikabahety.github.io/frisco-crash-analysis/).
+The result is recorded in `results.json` and stated on the [results page](https://avikabahety.github.io/frisco-crash-analysis/frisco/).
 
 ## Known limitations
 

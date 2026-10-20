@@ -1,10 +1,18 @@
 #!/usr/bin/env python3
-"""Compare a run's outputs against the saved Frisco baseline, byte for byte.
+"""Maintainer check: compare a Frisco run against the saved baseline, byte for byte.
 
-Used during refactoring: the Frisco outputs must not change unless a change is
-intended. Exits non-zero if any file differs or is missing.
+The published Frisco results must not change by accident. After any change to
+shared code (src/, config.py, analyze.py), run:
 
-    python compare_outputs.py           (after: python analyze.py --city frisco)
+    python analyze.py --city frisco
+    python compare_outputs.py          expect: 6 of 6 files identical to baseline
+
+Exits non-zero if any file differs or is missing.
+
+When a change is MEANT to alter the Frisco page or outputs, review the differences
+this script prints, then refresh the baseline by copying the new files over
+tests/baseline/frisco/ (index.html from docs/frisco/, the rest from output/frisco/)
+and commit them with that change.
 """
 
 import argparse

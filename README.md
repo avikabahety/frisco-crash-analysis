@@ -1,12 +1,17 @@
-# Left-turn crashes after dark — Frisco, TX
+# Left-turn crashes after dark
 
-Winter evening crashes at Frisco's signalised intersections run measurably higher than
-summer. Left-turn crashes drive a disproportionate share of that difference — roughly
-twice as many between 6 and 8pm in winter months as in summer months, at the same clock
-hours, adjusted for number of days in each season. At 5pm, daylight in both seasons, that difference
-is absent.
+This analysis compares winter evening crashes at signalized intersections against
+summer evening crashes at the same clock hours. In Frisco, TX, left-turn crashes drive
+a disproportionate share of the difference. Left-turn crashes are roughly twice as many
+between 6 and 8pm in winter months as in summer months, adjusted for number of days in
+each season.
 
-📊 **[Full results →](https://avikabahety.github.io/frisco-crash-analysis/)**
+The same analysis is being applied to other Collin County cities. Each city has its
+own results page.
+
+| City | Results |
+|---|---|
+| Frisco, TX | [Full results →](https://avikabahety.github.io/frisco-crash-analysis/frisco/) |
 
 ---
 
@@ -19,17 +24,20 @@ Requires pandas and numpy.
 conda activate <your-env>
 
 # otherwise
-conda create --name frisco-crash python=3.11 -y
-conda activate frisco-crash
+conda create --name crash-analysis python=3.11 -y
+conda activate crash-analysis
 conda install pandas numpy -y
 
-python analyze.py
+python analyze.py --city frisco
 ```
 
-Outputs are written to `output/` and `docs/index.html`.
+Every script takes `--city`. Outputs are written to `output/<city>/` and
+`docs/<city>/index.html`.
 
 ```bash
-python analyze.py --inspect   # print the CRIS columns in the export, confirm the mapping
+python analyze.py --city frisco --inspect    # print the CRIS columns in the export, confirm the mapping
+python check_completeness.py --city frisco   # where recent-month reporting has settled
+python check_aliases.py --city frisco        # look for street-name aliases in the data
 ```
 
 The export carries 142 columns; the analysis uses 11.
@@ -37,27 +45,44 @@ The export carries 142 columns; the analysis uses 11.
 
 ## Data
 
-`data/2016-2026-07-13_cris_list.csv` is a TxDOT CRIS export and is **not committed** — it
-is large and can be regenerated:
-
-1. Open [CRIS Query](https://cris.dot.state.tx.us/public/Query/app/home)
-2. Filter **City = FRISCO**, Crash Year 2016–2026
-3. Export the **crash-level Attribute List** to CSV
-4. Save it to `data/` and point `CRASH_FILE` in `config.py` at it
+Each city's TxDOT CRIS export lives in `data/<city>/` and is **not committed to
+GitHub** — it is large and can be regenerated. See [data/README.md](data/README.md).
 
 ## Layout
 
 ```
-config.py            parameters: windows, thresholds, column names, street names
-analyze.py           entry point — runs the analyses and writes every artifact
-check_aliases.py     verifies street-name canonicalisation against the data
-src/data.py          load, clean, filter. one definition of the study population
-src/stats.py         the statistical tests
-src/analyses.py      the two analyses
-src/report.py        the results page
-docs/index.html      generated — served by GitHub Pages
-output/              generated — results.json and CSVs
+config.py               shared settings: CRIS column map, filters, thresholds, seasons
+cities/
+  frisco_config.py      Frisco settings: data file, cutoff date, street aliases, sunset hours
+  frisco_report.py      Frisco results page text
+analyze.py              entry point — runs the analyses for one city, writes every artifact
+check_aliases.py        verifies street-name canonicalisation against the data
+check_completeness.py   measures CRIS reporting lag, to set the cutoff date
+compare_outputs.py      maintainer check: Frisco run vs. saved baseline
+src/city.py             loads the selected city's settings and page text
+src/data.py             load, clean, filter. one definition of the study population
+src/stats.py            the statistical tests
+src/analyses.py         the analyses
+src/report.py           shared page parts: charts, tables, styling, header, footer
+data/<city>/            CRIS export (not committed to GitHub) and city reference files
+output/<city>/          generated — results.json and CSVs (not committed to GitHub)
+docs/<city>/            generated — results page, served by GitHub Pages
+tests/baseline/frisco/  reference outputs used by compare_outputs.py
 ```
+
+## Adding a city
+
+1. Export the city's CRIS data to `data/<city>/` (see [data/README.md](data/README.md)).
+2. Create `cities/<city>_config.py` with every setting listed in `REQUIRED` in
+   `src/city.py`. `cities/frisco_config.py` is a starting point; the data file,
+   cutoff date and street aliases must be set for the new city. Analysis hours are
+   set from the city's sunset times before its results are looked at.
+3. Create `cities/<city>_report.py`, the page text, written for that city's
+   results. Charts, tables and the page frame come from `src/report.py`.
+4. Run `python analyze.py --city <city>`.
+
+The method, thresholds and seasons in `config.py` are shared, so every city is
+analysed the same way.
 
 ## Notes on the CRIS format
 
@@ -68,7 +93,7 @@ yields the year 1745 and an hour of zero, placing every crash at midnight withou
 an error. `src/data.py:parse_hour` handles the format explicitly.
 
 **Traffic control type varies over time.** A growing city installs signals, so an
-intersection recorded as stop-controlled in 2017 may be signalised by 2021. An all-time
+intersection recorded as stop-controlled in 2017 may be signalized by 2021. An all-time
 modal control type mislabels such intersections and mixes two crash regimes into a single
 baseline.
 
@@ -78,5 +103,5 @@ See [METHODOLOGY.md](METHODOLOGY.md).
 
 ## Licence
 
-MIT. Crash data is public record from TxDOT. Not affiliated with the City of Frisco or
+MIT. Crash data is public record from TxDOT. Not affiliated with any city or with
 TxDOT; any errors are the author's.
