@@ -44,11 +44,14 @@ STREET_ALIASES = {
 }
 
 # ------------------------------------------------------------- analysis windows
-# Frisco sunset: ~17:25 in December, ~20:35 in June. Hours 18-19 are therefore dark in
-# winter and light in summer, giving the darkness contrast. 17:00 is light in both
-# seasons and serves as a comparison hour with no contrast.
+# Frisco sunset: ~17:25 in December, ~20:35 in June. Hours 18-19 (6:00-7:59pm) are
+# therefore dark in winter and light in summer, giving the darkness contrast.
+#
+# Comparison hour: the last full hour that ends before the earliest winter sunset
+# (Frisco: earliest sunset ~5:20pm, so 4:00-4:59pm), daylight in both seasons.
+# 5:00-5:59pm is not used: sunset falls inside that hour in winter.
 CONTRAST_HOURS = [18, 19]
-CONTROL_HOUR = 17
+COMPARISON_HOUR = 16
 EVENING_HOURS = [18, 19, 20, 21, 22]
 MIDDAY_HOURS = [10, 11, 12, 13, 14, 15]
 

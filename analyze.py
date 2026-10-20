@@ -115,7 +115,7 @@ def main():
     c = dark["contrast"]
     wi = dark["within_intersection"]
     conc = mech["concentration"]
-    ctrl = dark["by_hour"].get(C.CONTROL_HOUR)
+    comp = dark["by_hour"].get(C.COMPARISON_HOUR)
 
     def fh(h):
         """Format a 24h integer hour as 12h string, e.g. 18 -> '6pm'."""
@@ -151,8 +151,8 @@ def main():
     winter {c['winter_left']}   summer {c['summer_left']}
     rate ratio {c['ratio']:.2f}x   95% CI [{c['lo']:.2f}, {c['hi']:.2f}]
 
-  CONTROL HOUR  ({fh(C.CONTROL_HOUR)}, light in both seasons — no effect expected)
-    left-turn ratio {ctrl['left_ratio']:.2f}x""" if ctrl else "    no data")
+  COMPARISON HOUR  ({fh(C.COMPARISON_HOUR)}, light in both seasons — no effect expected)
+    left-turn ratio {comp['left_ratio']:.2f}x""" if comp else "    no data")
 
     h0 = C.CONTRAST_HOURS[0]   # first contrast hour, for the "rates not shares" line
     print(f"""
@@ -200,7 +200,7 @@ def main():
     # left_lo              95% CI lower bound for left_ratio (Poisson)
     # left_hi              95% CI upper bound for left_ratio (Poisson)
     # all_ratio            winter/summer rate ratio for all crashes at this hour
-    # is_control           True for hour 17 (light in both seasons; no darkness contrast)
+    # is_comparison        True for the comparison hour (light in both seasons; no darkness contrast)
     #
     # The block below repeats for right-turn, right-angle and rear-end, and for
     # "other" (every intersection crash not coded as one of the four types above --

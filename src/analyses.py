@@ -68,7 +68,7 @@ def darkness(df):
             "summer_all_rate": len(s) / sum_days * 1000,
             "left_ratio": lt_ratio, "left_lo": lo, "left_hi": hi,
             "all_ratio": all_ratio,
-            "is_control": h == C.CONTROL_HOUR,
+            "is_comparison": h == C.COMPARISON_HOUR,
         }
         # Right-turn, right-angle and rear-end get the same treatment as left-turn:
         # raw counts, per-1,000-day rates and a winter/summer rate ratio. "other" is

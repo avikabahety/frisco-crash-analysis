@@ -127,7 +127,7 @@ def hour_rows(dark, transition_hours):
     out = []
     for h in sorted(dark["by_hour"]):
         v = dark["by_hour"][h]
-        ctrl = v["is_control"]
+        comparison = v["is_comparison"]
         note = _row_note(h, transition_hours)
         cells = "".join(
             f'<td class="m{" grp" if t != _ROW_TYPES[0] else ""}">{v[f"winter_{t}_rate"]:.1f}</td>'
@@ -135,7 +135,7 @@ def hour_rows(dark, transition_hours):
             f'<td class="m b">{fmt_ratio(v[f"{t}_ratio"])}</td>'
             for t in _ROW_TYPES
         )
-        out.append(f'''<tr class="{'ctrl' if ctrl else ''}">
+        out.append(f'''<tr class="{'ctrl' if comparison else ''}">
       <td class="m">{h % 12 or 12}{"am" if h < 12 else "pm"}</td>
       {cells}
       <td class="m dim grp">{v['all_ratio']:.2f}&times;</td>

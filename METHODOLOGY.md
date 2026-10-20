@@ -104,7 +104,9 @@ daylight crashes can be used: the sunset transition hours.
 
 Frisco's sunset moves from ~17:25 in December to ~20:35 in June. Therefore:
 
-- **17:00** — light in both seasons. No darkness contrast; used as a comparison hour.
+- **16:00** (4:00–4:59pm) — light in both seasons: the last full hour that ends before
+  the earliest winter sunset (~17:20). No darkness contrast; used as the comparison hour.
+- **17:00** — light in summer, but sunset falls inside this hour in winter. Not used.
 - **18:00–19:00** — dark in winter, light in summer. Maximum contrast.
 - **21:00+** — dark in both seasons. No contrast, so untestable.
 

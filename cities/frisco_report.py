@@ -228,7 +228,8 @@ def render(dark, mech, funnel, top):
     <p class="cap">Winter and summer columns are crashes per 1,000 season-days, not
     raw counts &mdash; that keeps every type directly comparable despite winter and
     summer covering a different number of calendar days. Ratios are
-    winter&thinsp;/&thinsp;summer.</p>
+    winter&thinsp;/&thinsp;summer. The shaded row ({R.hour_label(C.COMPARISON_HOUR)}) is the
+    comparison hour: daylight in both seasons.</p>
     <p class="cap">6am, 7am, and 5pm are unlabelled: light conditions change
     mid-hour at those times and a single label would misrepresent part of each hour.</p>
   </section>

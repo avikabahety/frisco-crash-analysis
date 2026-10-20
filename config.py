@@ -17,7 +17,7 @@ DOCS_ROOT = ROOT / "docs"          # each city's page goes to docs/<city>/index.
 # Settings that differ by city are NOT here. They live in cities/<city>_config.py
 # and are loaded by src/city.py when a script is run with --city. Those fields are:
 #   CRASH_FILE, ANALYSIS_END, STREET_ALIASES, sunrise/sunset times,
-#   CONTRAST_HOURS, CONTROL_HOUR, EVENING_HOURS, MIDDAY_HOURS, CITY_NAME
+#   CONTRAST_HOURS, COMPARISON_HOUR, EVENING_HOURS, MIDDAY_HOURS, CITY_NAME
 
 # ------------------------------------------------------------------- CRIS map
 # Confirmed against the Frisco export. CRIS field names vary by export version;
