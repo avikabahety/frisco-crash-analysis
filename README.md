@@ -3,7 +3,7 @@
 This analysis compares winter evening crashes at signalized intersections against
 summer evening crashes at the same clock hours. In Frisco, TX, left-turn crashes drive
 a disproportionate share of the difference. Left-turn crashes are roughly twice as many
-between 6 and 8pm in winter months as in summer months, adjusted for number of days in
+between 6pm and 8pm in winter months as in summer months, adjusted for number of days in
 each season. At 4pm, daylight in both seasons, that difference is absent.
 
 The same analysis is being applied to other Collin County cities. Each city has its

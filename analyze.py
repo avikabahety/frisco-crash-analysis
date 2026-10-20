@@ -9,7 +9,7 @@ Outputs (<city> is the --city value)
     output/<city>/results.json          every number, machine-readable
     output/<city>/hourly.csv            left-turn crashes by hour and season
     output/<city>/intersections.csv     dark-evening left-turn crashes by intersection
-    output/<city>/intersection_contrast.csv  winter vs summer left-turn rate by intersection (6-8pm)
+    output/<city>/intersection_contrast.csv  winter vs summer left-turn rate by intersection (6pm-8pm)
     output/<city>/top_intersections.csv      signalised intersections with the most crashes
 """
 
@@ -124,13 +124,13 @@ def main():
     win_days = dark["season_days"]["winter"]
     sum_days = dark["season_days"]["summer"]
 
-    # All-day totals (all hours present in by_hour, typically 6am-10pm)
+    # All-day totals (all hours present in by_hour, typically 6am-11pm)
     day_w = sum(v["winter_all"] for v in dark["by_hour"].values())
     day_s = sum(v["summer_all"] for v in dark["by_hour"].values())
     day_w_rate = day_w / win_days * 1000
     day_s_rate = day_s / sum_days * 1000
 
-    # 6-8pm window totals
+    # 6pm-8pm window totals
     all_w = sum(dark["by_hour"][h2]["winter_all"] for h2 in C.CONTRAST_HOURS
                 if h2 in dark["by_hour"])
     all_s = sum(dark["by_hour"][h2]["summer_all"] for h2 in C.CONTRAST_HOURS
@@ -139,11 +139,11 @@ def main():
     all_s_rate = all_s / sum_days * 1000
 
     print(f"""
-  ALL CRASHES  (6am-10pm, all hours)
+  ALL CRASHES  (6am-11pm, all hours)
     winter {day_w:,} total   {day_w_rate:.1f}/1,000 days
     summer {day_s:,} total   {day_s_rate:.1f}/1,000 days
 
-    6-8pm window
+    6pm-8pm window
     winter {all_w_rate:.1f}/1,000 days   summer {all_s_rate:.1f}/1,000 days   ratio {all_w_rate / all_s_rate:.2f}x
     (left-turn breakdown follows)
 
@@ -163,13 +163,13 @@ def main():
     within intersection   OR {wi['odds_ratio']:.2f}  p={wi['p']:.6f} {stars(wi['p'])}  ({wi['agree']}/{wi['n_strata']} move predicted way)
     excluding impaired    {dark['sober_only']['diff_pp']:+.1f} pp  p={dark['sober_only']['p']:.6f} {stars(dark['sober_only']['p'])}
 
-  MECHANISM  (6-8pm left-turn crashes citing 'failed to yield while turning left')
+  MECHANISM  (6pm-8pm left-turn crashes citing 'failed to yield while turning left')
     flashing yellow / permissive by definition  {mech['calibration']['failed_to_yield_pct']:.0f}%
     all signals                                 {mech['overall']['failed_to_yield_pct']:.0f}%
-    6-8pm specifically                          {mech['contrast_hours']['failed_to_yield_pct']:.0f}%
-    disregarded signal at 6-8pm                 {mech['contrast_hours']['ran_red_pct']:.0f}%
+    6pm-8pm specifically                        {mech['contrast_hours']['failed_to_yield_pct']:.0f}%
+    disregarded signal at 6pm-8pm               {mech['contrast_hours']['ran_red_pct']:.0f}%
 
-  INTERSECTION CONTRAST  (6-8pm, ranked by rate gap)""")
+  INTERSECTION CONTRAST  (6pm-8pm, ranked by rate gap)""")
     for s in dark["intersection_contrast"]:
         sig_flag = " *" if s["significant"] else ""
         print("    %-35s  winter %2d  summer %2d  gap %+.1f  ratio %.2fx [%.2f-%.2f]%s" % (
@@ -225,7 +225,7 @@ def main():
     ]).to_csv(C.OUTPUT_DIR / "hourly.csv", index=False)
 
     # intersections.csv — one row per intersection with at least 4 dark evening
-    # left-turn crashes (hours 18-21). Drawn from the mechanism analysis. Columns:
+    # left-turn crashes (hours 18-22, i.e. 6pm-11pm). Drawn from the mechanism analysis. Columns:
     #
     # intersection         normalised street-name pair (e.g. PRESTON RD & SH121)
     # crashes              dark evening left-turn crash count at this intersection
@@ -237,12 +237,12 @@ def main():
 
     # intersection_contrast.csv — one row per intersection that clears
     # MIN_INTERSECTION_CONTRAST left-turn crashes in both winter and summer
-    # during contrast hours (6-8pm). All qualifying intersections included
+    # during contrast hours (6pm-8pm). All qualifying intersections included
     # regardless of direction. Ranked by winter-minus-summer rate gap. Columns:
     #
     # intersection          normalised street-name pair
-    # winter_left           raw left-turn crash count during 6-8pm, winter months
-    # summer_left           raw left-turn crash count during 6-8pm, summer months
+    # winter_left           raw left-turn crash count during 6pm-8pm, winter months
+    # summer_left           raw left-turn crash count during 6pm-8pm, summer months
     # winter_rate           winter left-turn crashes per 1,000 winter days
     # summer_rate           summer left-turn crashes per 1,000 summer days
     # gap                   winter_rate - summer_rate (positive = winter higher)

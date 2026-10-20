@@ -56,9 +56,9 @@ def render(dark, mech, funnel, top):
 <main class="wrap">
 
   <section class="sec">
-    <h2><span class="eye">the numbers</span>Zooming in on the 6&ndash;8pm window</h2>
+    <h2><span class="eye">the numbers</span>Zooming in on the 6pm&ndash;8pm window</h2>
     <p>Overall crash rates are nearly equal across seasons. The gap opens at
-    6&ndash;8pm &mdash; when winter is dark and summer is still light &mdash; and left-turn
+    6pm&ndash;8pm &mdash; when winter is dark and summer is still light &mdash; and left-turn
     crashes account for a disproportionate share of it.</p>
     <table class="tab">
       <thead><tr>
@@ -68,17 +68,17 @@ def render(dark, mech, funnel, top):
       </tr></thead>
       <tbody>
         <tr>
-          <td>All crashes &mdash; full day (6am&ndash;10pm)</td>
+          <td>All crashes &mdash; full day (6am&ndash;11pm)</td>
           <td class="m">{day_w_rate:.0f}</td><td class="m">{day_s_rate:.0f}</td>
           <td class="m">{day_w_rate / day_s_rate:.2f}&times;</td>
         </tr>
         <tr>
-          <td>All crashes &mdash; 6&ndash;8pm window</td>
+          <td>All crashes &mdash; 6pm&ndash;8pm window</td>
           <td class="m">{eve_w_rate:.0f}</td><td class="m">{eve_s_rate:.0f}</td>
           <td class="m">{eve_w_rate / eve_s_rate:.2f}&times;</td>
         </tr>
         <tr class="sig">
-          <td>Left-turn crashes &mdash; 6&ndash;8pm window</td>
+          <td>Left-turn crashes &mdash; 6pm&ndash;8pm window</td>
           <td class="m">{lt_w_rate:.0f}</td><td class="m">{lt_s_rate:.0f}</td>
           <td class="m">{lt_w_rate / lt_s_rate:.2f}&times;</td>
         </tr>
@@ -114,16 +114,16 @@ def render(dark, mech, funnel, top):
     <div class="figure">
       {R.chart_type_ratio(dark)}
     </div>
-    <p style="margin-top:18px">At 6&ndash;8pm, left-turn crashes run at
+    <p style="margin-top:18px">At 6pm&ndash;8pm, left-turn crashes run at
     {lt_w_rate:.0f}&nbsp;per 1,000 winter days versus {lt_s_rate:.0f}&nbsp;per
     1,000 summer days &mdash; a rate ratio of {c['ratio']:.2f}&times;
     (95%&nbsp;CI&nbsp;{c['lo']:.2f}&ndash;{c['hi']:.2f}). Those hours are dark in
     winter and light in summer.</p>
-    <p style="margin-top:18px">The same 6&ndash;8pm window, all five crash types
+    <p style="margin-top:18px">The same 6pm&ndash;8pm window, all five crash types
     side by side:</p>
     <table class="tab">
       <thead><tr>
-        <th style="text-align:left">Crashes per 1,000 days &mdash; 6&ndash;8pm window</th>
+        <th style="text-align:left">Crashes per 1,000 days &mdash; 6pm&ndash;8pm window</th>
         <th>Winter</th><th>Summer</th>
         <th>Winter&thinsp;/&thinsp;Summer ratio</th>
       </tr></thead>
@@ -169,8 +169,8 @@ def render(dark, mech, funnel, top):
     <h2><span class="eye">comparison</span>The pattern is most prominent when light conditions differ</h2>
     <p class="lede">Sunset in Frisco falls around 5:25pm in December and 8:35pm in
     June; sunrise around 7:25am in December and 6:15am in June. The chart covers 6am
-    to 10pm. Winter is dark while summer is light in two windows: in the evening from
-    6 to 8pm, and briefly in the early morning before 7am. The evening window is the
+    to 11pm. Winter is dark while summer is light in two windows: in the evening from
+    6pm to 8pm, and briefly in the early morning before 7am. The evening window is the
     one this analysis tests; the morning window is shorter and has too few crashes for
     a reliable comparison.</p>
     <p>Outside those windows winter and summer left-turn crashes track closely &mdash;
@@ -233,7 +233,8 @@ def render(dark, mech, funnel, top):
     raw counts &mdash; that keeps every type directly comparable despite winter and
     summer covering a different number of calendar days. Ratios are
     winter&thinsp;/&thinsp;summer. The shaded row ({R.hour_label(C.COMPARISON_HOUR)}) is the
-    comparison hour: daylight in both seasons.</p>
+    comparison hour: daylight in both seasons. Each row covers the full hour, e.g.
+    6pm = 6:00pm&ndash;6:59pm.</p>
     <p class="cap">6am, 7am, 5pm, and 8pm are unlabelled: light conditions change
     mid-hour at those times and a single label would misrepresent part of each hour.</p>
   </section>
@@ -279,7 +280,7 @@ def render(dark, mech, funnel, top):
   <section class="sec">
     <h2><span class="eye">where to look</span>Intersections worth a closer look</h2>
     <p>These intersections show the largest observed gap between winter and summer
-    left-turn crashes during the 6&ndash;8pm window. Two of these intersections are on
+    left-turn crashes during the 6pm&ndash;8pm window. Two of these intersections are on
     SH121 and are likely managed by the City of Plano. The remaining two intersections
     represent a starting point for Frisco&rsquo;s evaluation of whether any
     countermeasure is appropriate to reduce winter left-turn crashes.</p>
@@ -292,9 +293,9 @@ def render(dark, mech, funnel, top):
       </tr></thead>
       <tbody>{R.intersection_contrast_rows(dark)}</tbody>
     </table>
-    <p class="cap">Crashes are counts over {span} during 6&ndash;8pm only. Rate gap is
+    <p class="cap">Crashes are counts over {span} during 6pm&ndash;8pm only. Rate gap is
     winter minus summer crashes per 1,000 season-days. Failed-to-yield column shows
-    the share of left-turn crashes between 6&ndash;10pm where the officer recorded
+    the share of left-turn crashes between 6pm&ndash;11pm where the officer recorded
     dark light conditions, citing failure to yield while turning left &mdash; the
     officer-recorded signature of a permissive left-turn phase. Sample sizes at individual intersections are small
     and confidence intervals are wide.</p>

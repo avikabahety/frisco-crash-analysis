@@ -194,7 +194,7 @@ def darkness(df):
 
     # ---- intersection-level seasonal contrast ----------------------------
     # For each named intersection, compare winter vs summer left-turn rate
-    # during contrast hours (6-8pm). Requires MIN_INTERSECTION_CONTRAST crashes
+    # during contrast hours (6pm-8pm). Requires MIN_INTERSECTION_CONTRAST crashes
     # in each season and a raw count gap of at least MIN_INTERSECTION_GAP.
     # Rate ratio CI is included to flag statistically meaningful gaps.
     dark_eve_left = sig[sig["hour"].isin(C.EVENING_HOURS) & sig["dark"] & sig["is_left"]]
@@ -277,7 +277,7 @@ def mechanism(df):
                       "ran_red_pct": m["ran_red"].mean() * 100}
     out["by_hour"] = by_hour
 
-    # Contrast hours specifically: if lefts were protected at 6-8pm, these crashes
+    # Contrast hours specifically: if lefts were protected at 6pm-8pm, these crashes
     # should read as red-light running. They do not.
     ch = left[left["hour"].isin(C.CONTRAST_HOURS)]
     out["contrast_hours"] = {
