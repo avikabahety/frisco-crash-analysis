@@ -11,14 +11,21 @@ This script:
      whose crashes occupy the same ground are likely to be the same road.
   3. Reports the effect on intersection identity.
 
-Run:  python check_aliases.py
+Run:  python check_aliases.py --city frisco
 """
+
+import argparse
 
 import numpy as np
 import pandas as pd
 
 import config as C
 from src.data import _header_row, intersection_key, normalise_street
+from src.city import available_cities, use_city
+
+p = argparse.ArgumentParser()
+p.add_argument("--city", required=True, choices=available_cities())
+use_city(p.parse_args().city)
 
 pd.set_option("display.width", 150)
 M_PER_DEG = 111_320.0

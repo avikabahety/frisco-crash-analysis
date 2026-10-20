@@ -12,14 +12,21 @@ sits well below its historical level is still filling in.
 
 It does not change any output. It exists to justify (or revise) config.ANALYSIS_END.
 
-Run:  python check_completeness.py
+Run:  python check_completeness.py --city frisco
 """
+
+import argparse
 
 import numpy as np
 import pandas as pd
 
 import config as C
 from src.data import _header_row
+from src.city import available_cities, use_city
+
+p = argparse.ArgumentParser()
+p.add_argument("--city", required=True, choices=available_cities())
+use_city(p.parse_args().city)
 
 pd.set_option("display.width", 150)
 

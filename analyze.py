@@ -1,8 +1,8 @@
 #!/usr/bin/env python3
 """Run the full Frisco crash analysis and write every artifact.
 
-    python analyze.py            run everything
-    python analyze.py --inspect  print the CRIS columns your export actually has
+    python analyze.py --city frisco            run everything
+    python analyze.py --city frisco --inspect  print the CRIS columns the export has
 
 Outputs
     docs/index.html              the results page (served by GitHub Pages)
@@ -12,12 +12,14 @@ Outputs
     output/intersection_contrast.csv  winter vs summer left-turn rate by intersection (6-8pm)
 """
 
+import argparse
 import sys
 
 import pandas as pd
 
 import config as C
 from src import analyses, report
+from src.city import available_cities, use_city
 from src.data import load
 from src.stats import stars
 
@@ -75,7 +77,14 @@ def inspect():
 
 
 def main():
-    if "--inspect" in sys.argv:
+    p = argparse.ArgumentParser(description="Run the crash analysis for one city.")
+    p.add_argument("--city", required=True, choices=available_cities())
+    p.add_argument("--inspect", action="store_true",
+                   help="print the CRIS columns in the export and exit")
+    args = p.parse_args()
+    use_city(args.city)
+
+    if args.inspect:
         inspect()
         return
 
