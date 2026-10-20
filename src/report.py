@@ -406,6 +406,22 @@ def top_rows(top):
     </tr>''' for t in top)
 
 
+def hour_label(h):
+    """24h integer hour as page text: 19 -> '7pm', 6 -> '6am'."""
+    return f"{h % 12 or 12}{'am' if h < 12 else 'pm'}"
+
+
+def signed_pp(x):
+    """A percentage-point difference as page text, with a typographic minus:
+    -13.94 -> '&minus;13.9', 5.2 -> '+5.2'."""
+    return f"&minus;{abs(x):.1f}" if x < 0 else f"+{x:.1f}"
+
+
+def p_text(p):
+    """A p-value as page text: below 0.001 shown as a bound, otherwise to 3 places."""
+    return "p&nbsp;&lt;&nbsp;0.001" if p < 0.001 else f"p&nbsp;=&nbsp;{p:.3f}"
+
+
 def window_rates(dark):
     """Crashes per 1,000 season-days for the summary table: all crashes over the
     full day, all crashes in the contrast hours, and left-turn crashes in the

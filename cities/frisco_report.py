@@ -27,6 +27,12 @@ def render(dark, mech, funnel, top):
     eve_w_rate, eve_s_rate = r["eve_w"], r["eve_s"]
     lt_w_rate, lt_s_rate = r["lt_w"], r["lt_s"]
 
+    # Worked example under the crash-mix chart: right-angle crashes at the last
+    # contrast hour, filled in from the data.
+    ex_h = C.CONTRAST_HOURS[-1]
+    ex = dark["by_hour"][ex_h]
+    ex_hour = R.hour_label(ex_h)
+
     description = f"""Winter evening crashes at Frisco signalised
  intersections run higher than summer. Left-turn crashes drive a disproportionate
  share of that difference. An analysis of TxDOT CRIS records, {span}."""
@@ -90,9 +96,9 @@ def render(dark, mech, funnel, top):
       {R.chart_type_diff(dark)}
     </div>
     <p class="cap" style="margin-top:12px">To understand the crash type mix chart,
-    here is an example: 7pm: right-angle crashes made up 19 of 151 winter crashes
-    that hour (12.6%) versus 26 of 98 summer crashes (26.5%) &mdash; a difference of
-    &minus;13.9 percentage points, the point plotted for right-angle at 7pm above.
+    here is an example: {ex_hour}: right-angle crashes made up {ex['winter_angle']} of {ex['winter_all']} winter crashes
+    that hour ({ex['angle_winter_pct']:.1f}%) versus {ex['summer_angle']} of {ex['summer_all']} summer crashes ({ex['angle_summer_pct']:.1f}%) &mdash; a difference of
+    {R.signed_pp(ex['angle_diff_pp'])} percentage points, the point plotted for right-angle at {ex_hour} above.
     This measures each type's share of that hour's crash mix, not how often it
     happens.</p>
     <p style="margin-top:18px"><b>Same comparison, as a rate ratio:</b> The chart
@@ -238,7 +244,7 @@ def render(dark, mech, funnel, top):
         condition field) leaves the difference unchanged, ruling out road conditions
         as an explanation.
         <span class="det">dry pavement only: {dark['dry_only']['diff_pp']:+.1f}&nbsp;pp,
-        p&nbsp;&lt;&nbsp;0.001</span>
+        {R.p_text(dark['dry_only']['p'])}</span>
       </div></li>
       <li><span class="mark">&mdash;</span><div>
         <b>Right-turn comparison.</b> If night driving were generally more difficult,
