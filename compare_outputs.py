@@ -4,8 +4,7 @@
 Used during refactoring: the Frisco outputs must not change unless a change is
 intended. Exits non-zero if any file differs or is missing.
 
-    python compare_outputs.py                                   (current layout)
-    python compare_outputs.py --output output/frisco --page docs/frisco/index.html
+    python compare_outputs.py           (after: python analyze.py --city frisco)
 """
 
 import argparse
@@ -35,9 +34,9 @@ def compare(expected, actual):
 
 def main():
     p = argparse.ArgumentParser()
-    p.add_argument("--output", default="output",
+    p.add_argument("--output", default="output/frisco",
                    help="folder holding the run's JSON and CSV outputs")
-    p.add_argument("--page", default="docs/index.html",
+    p.add_argument("--page", default="docs/frisco/index.html",
                    help="the run's generated results page")
     args = p.parse_args()
 

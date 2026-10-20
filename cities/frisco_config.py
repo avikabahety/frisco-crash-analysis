@@ -5,7 +5,7 @@ from config import DATA_DIR
 # ---------------------------------------------------------------- input files
 # TxDOT CRIS export: Query tool -> City = FRISCO -> crash-level Attribute List.
 # Large, regenerable, and therefore not committed (see .gitignore).
-CRASH_FILE = DATA_DIR / "2016-2026-07-13_cris_list.csv"
+CRASH_FILE = DATA_DIR / "frisco" / "2016-2026-07-13_cris_list.csv"
 
 # ------------------------------------------------------- reporting completeness
 # A crash enters CRIS only after an officer files a CR-3 and TxDOT processes it, so

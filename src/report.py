@@ -905,6 +905,7 @@ def render(dark, mech, funnel, top, path=None):
 </html>'''
 
     path.parent.mkdir(parents=True, exist_ok=True)
+    path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(html, encoding="utf-8")
     return path
 

@@ -10,8 +10,8 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "data"
-OUTPUT_DIR = ROOT / "output"
-DOCS_DIR = ROOT / "docs"
+OUTPUT_ROOT = ROOT / "output"      # each city writes to output/<city>/
+DOCS_ROOT = ROOT / "docs"          # each city's page goes to docs/<city>/index.html
 
 # ------------------------------------------------------------------- city
 # Settings that differ by city are NOT here. They live in cities/<city>_config.py

@@ -4,12 +4,13 @@
     python analyze.py --city frisco            run everything
     python analyze.py --city frisco --inspect  print the CRIS columns the export has
 
-Outputs
-    docs/index.html              the results page (served by GitHub Pages)
-    output/results.json          every number, machine-readable
-    output/hourly.csv            left-turn crashes by hour and season
-    output/intersections.csv     dark-evening left-turn crashes by intersection
-    output/intersection_contrast.csv  winter vs summer left-turn rate by intersection (6-8pm)
+Outputs (<city> is the --city value)
+    docs/<city>/index.html              the results page (served by GitHub Pages)
+    output/<city>/results.json          every number, machine-readable
+    output/<city>/hourly.csv            left-turn crashes by hour and season
+    output/<city>/intersections.csv     dark-evening left-turn crashes by intersection
+    output/<city>/intersection_contrast.csv  winter vs summer left-turn rate by intersection (6-8pm)
+    output/<city>/top_intersections.csv      signalised intersections with the most crashes
 """
 
 import argparse
@@ -272,13 +273,14 @@ def main():
     report.write_json(dark, mech)
     page = report.render(dark, mech, funnel, top)
 
-    written = [str(page.relative_to(C.ROOT)), "output/results.json",
-               "output/hourly.csv", "output/intersections.csv",
-               "output/intersection_contrast.csv", "output/top_intersections.csv"]
+    out = C.OUTPUT_DIR.relative_to(C.ROOT)
+    written = [str(page.relative_to(C.ROOT))] + [
+        f"{out}/{f}" for f in ["results.json", "hourly.csv", "intersections.csv",
+                               "intersection_contrast.csv", "top_intersections.csv"]]
     print("\n  WROTE")
     for w in written:
         print(f"    {w}")
-    print("\n  Preview the page:  cd docs && python -m http.server 8000\n")
+    print(f"\n  Preview the page:  cd {C.DOCS_DIR.relative_to(C.ROOT)} && python -m http.server 8000\n")
 
 
 if __name__ == "__main__":

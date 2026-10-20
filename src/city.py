@@ -34,3 +34,5 @@ def use_city(name):
     for k in REQUIRED:
         setattr(C, k, getattr(city, k))
     C.CITY = name
+    C.OUTPUT_DIR = C.OUTPUT_ROOT / name
+    C.DOCS_DIR = C.DOCS_ROOT / name
