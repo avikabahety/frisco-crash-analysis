@@ -246,11 +246,11 @@ def render(dark, mech, funnel, top):
     <ul class="checks">
       <li><span class="mark">&mdash;</span><div>
         <b>Dry pavement only.</b> Winter is both darker and wetter. Restricting to
-        crashes where the officer recorded dry road surface (from the CRIS surface
-        condition field) leaves the difference unchanged, ruling out road conditions
-        as an explanation.
-        <span class="det">dry pavement only: {dark['dry_only']['diff_pp']:+.1f}&nbsp;pp,
-        {R.p_text(dark['dry_only']['p'])}</span>
+        crashes where the officer recorded a dry road surface (from the CRIS surface
+        condition field) leaves the difference unchanged, so wet roads do not explain
+        it.
+        <span class="det">all surfaces: {dark['headline']['diff_pp']:+.1f}&nbsp;pp
+        &middot; dry pavement only: {dark['dry_only']['diff_pp']:+.1f}&nbsp;pp</span>
       </div></li>
       <li><span class="mark">&mdash;</span><div>
         <b>Right-turn comparison.</b> If night driving were generally more difficult,

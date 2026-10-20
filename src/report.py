@@ -417,11 +417,6 @@ def signed_pp(x):
     return f"&minus;{abs(x):.1f}" if x < 0 else f"+{x:.1f}"
 
 
-def p_text(p):
-    """A p-value as page text: below 0.001 shown as a bound, otherwise to 3 places."""
-    return "p&nbsp;&lt;&nbsp;0.001" if p < 0.001 else f"p&nbsp;=&nbsp;{p:.3f}"
-
-
 def window_rates(dark):
     """Crashes per 1,000 season-days for the summary table: all crashes over the
     full day, all crashes in the contrast hours, and left-turn crashes in the
