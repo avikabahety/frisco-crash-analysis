@@ -56,7 +56,7 @@ cities/
   frisco_config.py      Frisco settings: data file, cutoff date, street aliases, sunset hours
   frisco_report.py      Frisco results page text
 analyze.py              entry point — runs the analyses for one city, writes every artifact
-check_aliases.py        verifies street-name canonicalisation against the data
+check_aliases.py        verifies street-name canonicalization against the data
 check_completeness.py   measures CRIS reporting lag, to set the cutoff date
 compare_outputs.py      maintainer check: Frisco run vs. saved baseline
 src/city.py             loads the selected city's settings and page text
@@ -82,7 +82,7 @@ tests/baseline/frisco/  reference outputs used by compare_outputs.py
 4. Run `python analyze.py --city <city>`.
 
 The method, thresholds and seasons in `config.py` are shared, so every city is
-analysed the same way.
+analyzed the same way.
 
 ## Notes on the CRIS format
 
@@ -101,7 +101,7 @@ baseline.
 
 See [METHODOLOGY.md](METHODOLOGY.md).
 
-## Licence
+## License
 
 MIT. Crash data is public record from TxDOT. Not affiliated with any city or with
 TxDOT; any errors are the author's.

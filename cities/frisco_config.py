@@ -28,7 +28,7 @@ ANALYSIS_END = "2025-12-31"
 # Source: City of Frisco, Related Agencies / Streets
 # (https://www.friscotexas.gov/420/Related-Agencies)
 #
-# Canonicalised to the LOCAL name: "Eldorado Pkwy & Custer Rd" beats "FM2934 & FM2478".
+# Canonicalized to the LOCAL name: "Eldorado Pkwy & Custer Rd" beats "FM2934 & FM2478".
 #
 # Deliberately NOT merged: Dallas Pkwy and Dallas North Tollway are different roads
 # (frontage road vs tollway mainlane).

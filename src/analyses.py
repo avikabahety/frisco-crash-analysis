@@ -1,7 +1,7 @@
 """The analyses.
 
 Each returns a plain dict so the report layer never touches a DataFrame, and so
-results can be serialised to JSON and diffed between runs.
+results can be serialized to JSON and diffed between runs.
 
 Findings are reported with the tests that could have refuted them. Where a test
 came back negative, that is recorded too -- see `mechanism()['concentration']`.

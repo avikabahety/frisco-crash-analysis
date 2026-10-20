@@ -33,9 +33,9 @@ settled.
 | Both street names present, no self-pairs | An intersection requires two distinct street names. Isolated records where both fields carry the same name (e.g. `LEGACY DR & LEGACY DR`) are excluded as malformed. |
 | Signalized only, for the main analyses | Left-turn phasing only exists at a signal. |
 
-**Intersection identity** is the normalised, order-independent street-name pair. Street
-names are canonicalised before pairing: route numbers are standardised (`SH 121`,
-`SH-121`, `SH0121` → `SH121`), suffixes are standardised (`MAIN STREET` → `MAIN ST`), and
+**Intersection identity** is the normalized, order-independent street-name pair. Street
+names are canonicalized before pairing: route numbers are standardized (`SH 121`,
+`SH-121`, `SH0121` → `SH121`), suffixes are standardized (`MAIN STREET` → `MAIN ST`), and
 routes carrying a local name are resolved to that name (FM 2934 → Eldorado Pkwy,
 FM 3537 → Main St, FM 2478 → Custer Rd, SH 289 → Preston Rd), since officers record the
 same road under either designation. Dallas Pkwy and the Dallas North Tollway are distinct
@@ -79,14 +79,14 @@ export versions.
 ### Fields deliberately not used
 
 - **`Average Daily Traffic Amount`** and the other ADT columns are populated on only
-  ~30% of records (on-system roads). Too sparse to normalise by exposure. Frisco's GIS
+  ~30% of records (on-system roads). Too sparse to normalize by exposure. Frisco's GIS
   traffic-volume layer would be the source if exposure is ever added.
 - **`At Intersection Flag`** is narrower than `Intersection Related` and drops ~3,700
   approach crashes, including queue rear-ends on approaches.
 - **`Number of Lanes`, `Median Type`, `Median Width`** — ~30% populated, too sparse.
 - **`Latitude` and `Longitude` as the intersection key**. Considered as an alternative to the street-name pair, 
 but in dense areas, clustering on them chains large number of crashes into corridor-length groups rather 
-than discrete intersections. Thus the normalised street-name pair is used instead.
+than discrete intersections. Thus the normalized street-name pair is used instead.
 
 ## The darkness analysis
 

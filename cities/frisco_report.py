@@ -8,7 +8,7 @@ analysis results.
 import config as C
 from src import report as R
 
-# Hours where light conditions change mid-hour, left unlabelled in the hour table
+# Hours where light conditions change mid-hour, left unlabeled in the hour table
 # (Frisco: summer sunrise ~6:15am, winter sunrise ~7:25am, winter sunset ~5:25pm,
 # summer sunset ~7:50-8:40pm from May to August). Keep the hour-table caption below
 # in step with this list.
@@ -35,13 +35,13 @@ def render(dark, mech, funnel, top):
     ex = dark["by_hour"][ex_h]
     ex_hour = R.hour_label(ex_h)
 
-    description = f"""Winter evening crashes at Frisco signalised
+    description = f"""Winter evening crashes at Frisco signalized
  intersections run higher than summer. Left-turn crashes drive a disproportionate
  share of that difference. An analysis of TxDOT CRIS records, {span}."""
 
     body = f'''<header class="hero"><div class="wrap">
-  <h1>Winter evening crashes at signalised intersections run <em>measurably higher.</em></h1>
-  <p class="sub">Winter evening crashes at Frisco&rsquo;s signalised intersections run
+  <h1>Winter evening crashes at signalized intersections run <em>measurably higher.</em></h1>
+  <p class="sub">Winter evening crashes at Frisco&rsquo;s signalized intersections run
   measurably higher than summer. Left-turn crashes drive a disproportionate share of
   that difference.</p>
   <div class="figure">
@@ -235,7 +235,7 @@ def render(dark, mech, funnel, top):
     winter&thinsp;/&thinsp;summer. The shaded row ({R.hour_label(C.COMPARISON_HOUR)}) is the
     comparison hour: daylight in both seasons. Each row covers the full hour, e.g.
     6pm = 6:00pm&ndash;6:59pm.</p>
-    <p class="cap">6am, 7am, 5pm, and 8pm are unlabelled: light conditions change
+    <p class="cap">6am, 7am, 5pm, and 8pm are unlabeled: light conditions change
     mid-hour at those times and a single label would misrepresent part of each hour.</p>
   </section>
 
@@ -358,7 +358,7 @@ def render(dark, mech, funnel, top):
     <p class="cap">Freeway mainlane crashes are excluded: none carry a cross street and
     their crash-type distribution is characteristic of a freeway, not an intersection.
     Driveway-access crashes are excluded. The analyses above use
-    the signalised subset, since left-turn phasing exists only at a signal.</p>
+    the signalized subset, since left-turn phasing exists only at a signal.</p>
     <p><a href="{C.REPO_URL}" style="color:#B87A18;font-weight:600;">Code, data and
     full method &rarr;</a></p>
   </section>

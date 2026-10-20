@@ -10,7 +10,7 @@ Outputs (<city> is the --city value)
     output/<city>/hourly.csv            left-turn crashes by hour and season
     output/<city>/intersections.csv     dark-evening left-turn crashes by intersection
     output/<city>/intersection_contrast.csv  winter vs summer left-turn rate by intersection (6pm-8pm)
-    output/<city>/top_intersections.csv      signalised intersections with the most crashes
+    output/<city>/top_intersections.csv      signalized intersections with the most crashes
 """
 
 import argparse
@@ -41,7 +41,7 @@ def inspect():
         "cross_street": "intersection identity (second street)",
         "collision": "crash type: left-turn / angle / rear-end / right-turn",
         "factors": "permissive vs protected fingerprint; impairment",
-        "control": "signalised filter; flashing-yellow calibration",
+        "control": "signalized filter; flashing-yellow calibration",
         "light": "DARK vs DAYLIGHT  <- the independent variable",
         "surface": "dry-pavement-only robustness check",
         "intersection": "scope filter: intersection / freeway / driveway",
@@ -97,7 +97,7 @@ def main():
 
     print(f"Reading {C.CRASH_FILE.name}\n")
     df, funnel = load()
-    funnel.append(("at signalised intersections — analysis population",
+    funnel.append(("at signalized intersections — analysis population",
                    int(df["signal"].sum())))
 
     print("Filter funnel")
@@ -227,7 +227,7 @@ def main():
     # intersections.csv — one row per intersection with at least 4 dark evening
     # left-turn crashes (hours 18-22, i.e. 6pm-11pm). Drawn from the mechanism analysis. Columns:
     #
-    # intersection         normalised street-name pair (e.g. PRESTON RD & SH121)
+    # intersection         normalized street-name pair (e.g. PRESTON RD & SH121)
     # crashes              dark evening left-turn crash count at this intersection
     # failed_to_yield_pct  % coded "failed to yield right of way - turning left"
     #                      (signature of a permissive left-turn phase)
@@ -240,7 +240,7 @@ def main():
     # during contrast hours (6pm-8pm). All qualifying intersections included
     # regardless of direction. Ranked by winter-minus-summer rate gap. Columns:
     #
-    # intersection          normalised street-name pair
+    # intersection          normalized street-name pair
     # winter_left           raw left-turn crash count during 6pm-8pm, winter months
     # summer_left           raw left-turn crash count during 6pm-8pm, summer months
     # winter_rate           winter left-turn crashes per 1,000 winter days
@@ -260,7 +260,7 @@ def main():
     # the most total crashes, 2016-2025. Also shown as a table on the public report
     # page under "Signalized intersections with the most crashes overall". Columns:
     #
-    # intersection           normalised street-name pair
+    # intersection           normalized street-name pair
     # total_crashes          all crashes at this intersection, all hours, all seasons
     # left_turn_crashes      of which coded "ONE STRAIGHT-ONE LEFT TURN"
     # right_turn_crashes     of which coded "ONE STRAIGHT-ONE RIGHT TURN"

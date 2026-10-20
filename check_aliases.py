@@ -53,7 +53,7 @@ section("1. WHAT THE ALIAS MAP MERGES")
 
 
 def _bare(name):
-    """Normalisation WITHOUT alias resolution, to show the before state."""
+    """Normalization WITHOUT alias resolution, to show the before state."""
     import re
     if not isinstance(name, str):
         return ""
@@ -81,7 +81,7 @@ for route, local in C.STREET_ALIASES.items():
 # --------------------------------------------------------------------------
 section("2. SEARCH FOR ALIASES NOT YET IN THE MAP (from coordinates alone)")
 print("  Two street names are likely to be the same road if their crashes occupy the")
-print("  same ground. For each pair of common street names, this compares the centre")
+print("  same ground. For each pair of common street names, this compares the center")
 print("  of their crashes and the spread around it.\n")
 
 rows = []
@@ -113,16 +113,16 @@ for i, a in enumerate(prof.index):
             cands.append({
                 "name A": a, "name B": b,
                 "n A": int(ra["n"]), "n B": int(rb["n"]),
-                "centres apart (m)": round(dist),
+                "centers apart (m)": round(dist),
                 "known alias": "yes" if (a in known and b in known) else "",
             })
 
 if cands:
-    out = pd.DataFrame(cands).sort_values("centres apart (m)")
+    out = pd.DataFrame(cands).sort_values("centers apart (m)")
     print(out.head(20).to_string(index=False))
     print("\n  'known alias' = already handled in config.STREET_ALIASES.")
-    print("  Other pairs with centres close together warrant a manual check: they may be")
-    print("  genuine aliases, or two roads that happen to cross near the centre of town.")
+    print("  Other pairs with centers close together warrant a manual check: they may be")
+    print("  genuine aliases, or two roads that happen to cross near the center of town.")
     print("  Geometry alone cannot separate those cases. Confirm on a map before adding")
     print("  an entry to the alias map.")
 else:

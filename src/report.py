@@ -1,7 +1,7 @@
 """Render the results page.
 
 Visual language follows the subject: signal-timing sheets and crash tables. Monospace
-for figures an engineer would want to check, and the signal head's own colours
+for figures an engineer would want to check, and the signal head's own colors
 (amber = permissive, green = protected, red = crash).
 """
 
@@ -83,7 +83,7 @@ def chart(dark, winter_field="winter_left_rate", summer_field="summer_left_rate"
     return f'''<svg viewBox="0 0 {W} {H}" class="chart" role="img"
    aria-label="{title}, winter versus summer">
   <text x="{L}" y="22" class="title">{title}</text>
-  <text x="{L}" y="40" class="subtitle">{C.CITY_NAME} signalised intersections, {dark['span']['start_year']}&ndash;{dark['span']['end_year']}</text>
+  <text x="{L}" y="40" class="subtitle">{C.CITY_NAME} signalized intersections, {dark['span']['start_year']}&ndash;{dark['span']['end_year']}</text>
   <rect x="{mx0:.1f}" y="{T}" width="{max(mx1 - mx0, 0):.1f}" height="{ph}" class="band"/>
   {'<text x="' + f"{(mx0 + mx1) / 2:.1f}" + f'" y="{T + 13}" class="bandlab" text-anchor="middle">dark in winter,</text><text x="' + f"{(mx0 + mx1) / 2:.1f}" + f'" y="{T + 25}" class="bandlab" text-anchor="middle">light in summer</text>' if mx1 - mx0 > 60 else ''}
   <rect x="{x0:.1f}" y="{T}" width="{max(x1 - x0, 0):.1f}" height="{ph}" class="band"/>
@@ -142,15 +142,6 @@ def hour_rows(dark, transition_hours):
       <td class="note">{note}</td>
     </tr>''')
     return "\n".join(out)
-
-
-def _sites(mech, limit=12):
-    return "\n".join(f'''<tr>
-      <td>{s['intersection']}</td>
-      <td class="m">{s['crashes']}</td>
-      <td class="m amber">{s['failed_to_yield_pct']:.0f}%</td>
-      <td class="m dim">{s['ran_red_pct']:.0f}%</td>
-    </tr>''' for s in mech["sites"][:limit])
 
 
 def chart_type_diff(dark):
@@ -583,7 +574,7 @@ def page(body, description, span):
 <body>
 
 <div class="top"><div class="wrap">
-  <span class="tag">{C.CITY_NAME}, TX &middot; signalised intersections</span>
+  <span class="tag">{C.CITY_NAME}, TX &middot; signalized intersections</span>
   <span class="src">Based on TxDOT CRIS &middot; {span}</span>
 </div></div>
 
