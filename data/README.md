@@ -9,16 +9,21 @@ The CRIS export. Large and regenerable, so it is excluded from the repository
 
 Get it: https://cris.dot.state.tx.us/public/Query/app/home
 → Query tool → City = <CITY>, Crash Year 2016 onward
-→ export the crash-level **Attribute List** to CSV → save it in `data/<city>/`
+→ export the crash-level **Attribute List** (All Crash fields, not Unit and Person attributes) to CSV → save it in `data/<city>/`
 → set `CRASH_FILE` in `cities/<city>_config.py` to its name.
+
+Save the CRIS query alongside the exported csv as a `.qry` file (CRIS offers this as a
+download). It can be loaded back into CRIS to re-run the same query; the CSV's own
+header also lists the filters used.
 
 Name the file by the date it was pulled (e.g. `2016-2026-07-13_cris_list.csv`). The
 pull date decides which recent months are still incomplete; see `ANALYSIS_END` in
 the city's config and `python check_completeness.py --city <city>`.
 
-| City | File | Pulled |
-|---|---|---|
-| Frisco | `frisco/2016-2026-07-13_cris_list.csv` | 13 July 2026 |
+| City | File | Pulled | Years |
+|---|---|---|---|
+| Frisco | `frisco/2016-2026-07-13_cris_list.csv` | 13 July 2026 | 2016–2026 (2026 partial; analysis stops at 2025) |
+| Plano | `plano/2016-2026-10-21_cris_list_plano.csv` | 21 Oct 2026 | 2016–2025 |
 
 ## `frisco/signal_installations.csv` — committed to GitHub
 Signal installation dates from City of Frisco bulletins or estimated from local news.

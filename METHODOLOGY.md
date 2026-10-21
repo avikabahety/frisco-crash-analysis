@@ -28,7 +28,7 @@ settled.
 | Step | Why |
 |---|---|
 | `Intersection Related` ∈ {INTERSECTION, INTERSECTION RELATED} | Keeps crashes at an intersection *and* on its approach. Approach crashes (queue rear-ends, dilemma-zone crashes) are intersection failures occurring 150ft upstream, and using the `At Intersection Flag` field would drop ~3,700 of those approach crashes. Thus a design choice was made to use `Intersection Related` field. |
-| Exclude `NON INTERSECTION` | Freeway mainlane. Zero of 12,162 carry a cross street, and their crash-type signature is a freeway's: single-vehicle, rear-end, sideswipe, with right-angle crashes at 2.6% against 15% city-wide. |
+| Exclude `NON INTERSECTION` | Largely freeway mainlane and mid-block crashes. In Frisco, zero of 12,162 carry a cross street, and their crash-type signature is a freeway's: single-vehicle, rear-end, sideswipe, with right-angle crashes at 2.6% against 15% city-wide. |
 | Exclude `DRIVEWAY ACCESS` | Excluded. |
 | Both street names present, no self-pairs | An intersection requires two distinct street names. Isolated records where both fields carry the same name (e.g. `LEGACY DR & LEGACY DR`) are excluded as malformed. |
 | Signalized only, for the main analyses | Left-turn phasing only exists at a signal. |
@@ -38,7 +38,9 @@ names are canonicalized before pairing: route numbers are standardized (`SH 121`
 `SH-121`, `SH0121` → `SH121`), suffixes are standardized (`MAIN STREET` → `MAIN ST`), and
 routes carrying a local name are resolved to that name (FM 2934 → Eldorado Pkwy,
 FM 3537 → Main St, FM 2478 → Custer Rd, SH 289 → Preston Rd), since officers record the
-same road under either designation. Dallas Pkwy and the Dallas North Tollway are distinct
+same road under either designation. An alias is added only when crash locations show both
+names at the same intersections; each city’s aliases, with the evidence for each, are listed
+in cities/<city>_config.py. Dallas Pkwy and the Dallas North Tollway are distinct
 roads and are not combined.
 
 Pooled results — the rate ratio, the dark/daylight comparison, the robustness checks and
@@ -129,8 +131,12 @@ pooled test.
 **3. Dry pavement only.** Restricted to crashes where `Surface Condition` = DRY. The
 proportion test is re-run on this subset.
 
-**4. Right-turn comparison.** The same dark/daylight proportion test run on right-turn
-crashes. No effect expected or found.
+**4. Other crash types.** Winter/summer rate ratios in the contrast hours (6pm–8pm)
+for left-turn, right-angle, rear-end and right-turn crashes. If darkness made all
+driving harder, every type would rise by a similar amount; left-turn crashes rise far
+more than the others. Rates are used rather than shares of the crash mix: shares add
+up to 100%, so a rising left-turn share forces the other types' shares down whatever
+the cause. Right-turn crashes are few, so their ratio is shown but not relied on.
 
 **5. Impaired drivers excluded.** Crashes where `Contributing Factors` contains an
 impairment code are dropped. The proportion test is re-run on the remainder.

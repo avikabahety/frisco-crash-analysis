@@ -29,12 +29,6 @@ def render(dark, mech, funnel, top):
     eve_w_rate, eve_s_rate = r["eve_w"], r["eve_s"]
     lt_w_rate, lt_s_rate = r["lt_w"], r["lt_s"]
 
-    # Worked example under the crash-mix chart: right-angle crashes at the last
-    # contrast hour, filled in from the data.
-    ex_h = C.CONTRAST_HOURS[-1]
-    ex = dark["by_hour"][ex_h]
-    ex_hour = R.hour_label(ex_h)
-
     description = f"""Winter evening crashes at Frisco signalized
  intersections run higher than summer. Left-turn crashes drive a disproportionate
  share of that difference. An analysis of TxDOT CRIS records, {span}."""
@@ -89,28 +83,12 @@ def render(dark, mech, funnel, top):
   <section class="sec">
     <h2><span class="eye">crash types</span>Left-turn crashes stand out in the
     evening window</h2>
-    <p>The chart below shows each crash type's share of that hour's crashes, winter
-    minus summer &mdash; positive values mean a bigger share in winter, negative means
-    a bigger share in summer, zero means no difference. In the evening hours where
-    winter is dark and summer is still light, left-turn crashes show a pronounced
-    positive difference.</p>
-    <div class="figure">
-      {R.chart_type_diff(dark)}
-    </div>
-    <p class="cap" style="margin-top:12px">To understand the crash type mix chart,
-    here is an example: {ex_hour}: right-angle crashes made up {ex['winter_angle']} of {ex['winter_all']} winter crashes
-    that hour ({ex['angle_winter_pct']:.1f}%) versus {ex['summer_angle']} of {ex['summer_all']} summer crashes ({ex['angle_summer_pct']:.1f}%) &mdash; a difference of
-    {R.signed_pp(ex['angle_diff_pp'])} percentage points, the point plotted for right-angle at {ex_hour} above.
-    This measures each type's share of that hour's crash mix, not how often it
-    happens.</p>
-    <p style="margin-top:18px"><b>Same comparison, as a rate ratio:</b> The chart
-    below shows crash type (left-turn, right-angle and rear-end), plotted as a
-    winter&thinsp;/&thinsp;summer rate ratio. Right-turn is left off this particular
-    chart: its per-hour counts are small so one crash can swing its ratio
-    several-fold, which would stretch the shared scale and hide the other three
-    lines' real signal &mdash; but right-turn ratio is still shown in full in the
-    table below. A gap in a line means too few crashes that hour in one season for a
-    ratio to be defined.</p>
+    <p>The chart below shows, hour by hour, how each crash type's rate compares between
+    winter and summer: above 1&times; means more crashes in winter, below 1&times; more
+    in summer. Right-turn is left off this particular chart because those crashes are
+    too few per hour to chart reliably, but their hourly ratios are still shown in the
+    hour-by-hour table further down. A gap in a line means too few crashes that hour to
+    calculate a ratio.</p>
     <div class="figure">
       {R.chart_type_ratio(dark)}
     </div>
@@ -255,27 +233,20 @@ def render(dark, mech, funnel, top):
         &middot; dry pavement only: {R.signed_pp(dark['dry_only']['diff_pp'])}&nbsp;pp</span>
       </div></li>
       <li><span class="mark">&mdash;</span><div>
-        <b>Right-turn comparison.</b> If night driving were generally more difficult,
-        other turning movements would shift similarly. Right-turn crashes show no
-        change in the same window, making a general night-driving explanation unlikely.
-        <span class="det">left-turn {R.signed_pp(dark['placebo']['left']['diff_pp'])}&nbsp;pp
-        &middot; right-turn {R.signed_pp(dark['placebo']['right']['diff_pp'])}&nbsp;pp
-        &middot; right-angle {R.signed_pp(dark['placebo']['angle']['diff_pp'])}&nbsp;pp
-        &middot; rear-end {R.signed_pp(dark['placebo']['rear']['diff_pp'])}&nbsp;pp</span>
-      </div></li>
-      <li><span class="mark">&mdash;</span><div>
-        <b>Rates, not counts.</b> Left-turn crashes are compared as rates per calendar
-        day rather than as shares of total crashes, so a shrinking denominator cannot
-        produce a spurious rise.
-        <span class="det">6pm: {dark['by_hour'].get(18, {}).get('left_ratio', 0):.2f}&times;
-        left-turn vs {dark['by_hour'].get(18, {}).get('all_ratio', 0):.2f}&times;
-        all crashes</span>
+        <b>Other crash types.</b> If darkness simply made all driving harder, every
+        type of crash would rise by a similar amount in the 6pm&ndash;8pm window. It
+        does not: left-turn crashes roughly double, right-angle crashes do not rise,
+        and rear-end crashes rise only modestly.
+        <span class="det">left-turn {R.fmt_ratio(c['ratio'])}
+        &middot; right-angle {R.fmt_ratio(c['angle_ratio'])}
+        &middot; rear-end {R.fmt_ratio(c['rear_ratio'])}
+        &middot; right-turn {R.fmt_ratio(c['right_ratio'])} (few crashes)</span>
       </div></li>
     </ul>
-    <p class="cap">The association also survives stratification by intersection
-    (Mantel&ndash;Haenszel OR&nbsp;{wi['odds_ratio']:.2f} across {wi['n_strata']}
-    intersections, {wi['agree']}/{wi['n_strata']} moving the predicted way) and
-    exclusion of impaired-driver crashes
+    <p class="cap">The pattern also holds within individual intersections: among the
+    {wi['n_strata']} intersections with enough crashes to compare, left turns make up a
+    larger part of crashes after dark than in daylight at {wi['agree']}. It also holds
+    after excluding impaired-driver crashes
     ({R.signed_pp(dark['sober_only']['diff_pp'])}&nbsp;pp, impairment recorded in
     {dark['sober_only']['impaired_pct']:.1f}% of crashes in these hours).</p>
   </section>
@@ -283,10 +254,9 @@ def render(dark, mech, funnel, top):
   <section class="sec">
     <h2><span class="eye">where to look</span>Intersections worth a closer look</h2>
     <p>These intersections show the largest observed gap between winter and summer
-    left-turn crashes during the 6pm&ndash;8pm window. Two of these intersections are on
-    SH121 and may be operated by another agency. The remaining two intersections
-    represent a starting point for Frisco&rsquo;s evaluation of whether any
-    countermeasure is appropriate to reduce winter left-turn crashes.</p>
+    left-turn crashes during the 6pm&ndash;8pm window. The other intersections have
+    either too few left-turn crashes in this window to compare individually or show
+    only a small gap between winter and summer.</p>
     <table class="tab">
       <thead><tr>
         <th>Intersection</th>
