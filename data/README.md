@@ -9,7 +9,7 @@ The CRIS export. Large and regenerable, so it is excluded from the repository
 
 Get it: https://cris.dot.state.tx.us/public/Query/app/home
 → Query tool → City = <CITY>, Crash Year 2016 onward
-→ export the crash-level **Attribute List** to CSV → save it in `data/<city>/`
+→ export the crash-level **Attribute List** (All Crash fields, not Unit and Person attributes) to CSV → save it in `data/<city>/`
 → set `CRASH_FILE` in `cities/<city>_config.py` to its name.
 
 Name the file by the date it was pulled (e.g. `2016-2026-07-13_cris_list.csv`). The
