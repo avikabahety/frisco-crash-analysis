@@ -1,23 +1,26 @@
 #!/usr/bin/env python3
-"""Run the full Frisco crash analysis and write every artifact.
+"""Run the crash analysis for one city and write every artifact.
 
-    python analyze.py            run everything
-    python analyze.py --inspect  print the CRIS columns your export actually has
+    python analyze.py --city frisco            run everything
+    python analyze.py --city frisco --inspect  print the CRIS columns the export has
 
-Outputs
-    docs/index.html              the results page (served by GitHub Pages)
-    output/results.json          every number, machine-readable
-    output/hourly.csv            left-turn crashes by hour and season
-    output/intersections.csv     dark-evening left-turn crashes by intersection
-    output/intersection_contrast.csv  winter vs summer left-turn rate by intersection (6-8pm)
+Outputs (<city> is the --city value)
+    docs/<city>/index.html              the results page (served by GitHub Pages)
+    output/<city>/results.json          every number, machine-readable
+    output/<city>/hourly.csv            left-turn crashes by hour and season
+    output/<city>/intersections.csv     dark-evening left-turn crashes by intersection
+    output/<city>/intersection_contrast.csv  winter vs summer left-turn rate by intersection (6pm-8pm)
+    output/<city>/top_intersections.csv      signalized intersections with the most crashes
 """
 
+import argparse
 import sys
 
 import pandas as pd
 
 import config as C
 from src import analyses, report
+from src.city import available_cities, city_report, use_city
 from src.data import load
 from src.stats import stars
 
@@ -38,7 +41,7 @@ def inspect():
         "cross_street": "intersection identity (second street)",
         "collision": "crash type: left-turn / angle / rear-end / right-turn",
         "factors": "permissive vs protected fingerprint; impairment",
-        "control": "signalised filter; flashing-yellow calibration",
+        "control": "signalized filter; flashing-yellow calibration",
         "light": "DARK vs DAYLIGHT  <- the independent variable",
         "surface": "dry-pavement-only robustness check",
         "intersection": "scope filter: intersection / freeway / driveway",
@@ -75,19 +78,26 @@ def inspect():
 
 
 def main():
-    if "--inspect" in sys.argv:
+    p = argparse.ArgumentParser(description="Run the crash analysis for one city.")
+    p.add_argument("--city", required=True, choices=available_cities())
+    p.add_argument("--inspect", action="store_true",
+                   help="print the CRIS columns in the export and exit")
+    args = p.parse_args()
+    use_city(args.city)
+
+    if args.inspect:
         inspect()
         return
 
     if not C.CRASH_FILE.exists():
         print(f"Crash export not found: {C.CRASH_FILE}")
-        print("Export from https://cris.dot.state.tx.us (Query -> City = FRISCO ->")
+        print(f"Export from https://cris.dot.state.tx.us (Query -> City = {C.CITY_NAME.upper()} ->")
         print("crash-level Attribute List -> CSV) and place it there. See README.")
         sys.exit(1)
 
     print(f"Reading {C.CRASH_FILE.name}\n")
     df, funnel = load()
-    funnel.append(("at signalised intersections — analysis population",
+    funnel.append(("at signalized intersections — analysis population",
                    int(df["signal"].sum())))
 
     print("Filter funnel")
@@ -105,7 +115,7 @@ def main():
     c = dark["contrast"]
     wi = dark["within_intersection"]
     conc = mech["concentration"]
-    ctrl = dark["by_hour"].get(C.CONTROL_HOUR)
+    comp = dark["by_hour"].get(C.COMPARISON_HOUR)
 
     def fh(h):
         """Format a 24h integer hour as 12h string, e.g. 18 -> '6pm'."""
@@ -114,13 +124,13 @@ def main():
     win_days = dark["season_days"]["winter"]
     sum_days = dark["season_days"]["summer"]
 
-    # All-day totals (all hours present in by_hour, typically 6am-10pm)
+    # All-day totals (all hours present in by_hour, typically 6am-11pm)
     day_w = sum(v["winter_all"] for v in dark["by_hour"].values())
     day_s = sum(v["summer_all"] for v in dark["by_hour"].values())
     day_w_rate = day_w / win_days * 1000
     day_s_rate = day_s / sum_days * 1000
 
-    # 6-8pm window totals
+    # 6pm-8pm window totals
     all_w = sum(dark["by_hour"][h2]["winter_all"] for h2 in C.CONTRAST_HOURS
                 if h2 in dark["by_hour"])
     all_s = sum(dark["by_hour"][h2]["summer_all"] for h2 in C.CONTRAST_HOURS
@@ -129,11 +139,11 @@ def main():
     all_s_rate = all_s / sum_days * 1000
 
     print(f"""
-  ALL CRASHES  (6am-10pm, all hours)
+  ALL CRASHES  (6am-11pm, all hours)
     winter {day_w:,} total   {day_w_rate:.1f}/1,000 days
     summer {day_s:,} total   {day_s_rate:.1f}/1,000 days
 
-    6-8pm window
+    6pm-8pm window
     winter {all_w_rate:.1f}/1,000 days   summer {all_s_rate:.1f}/1,000 days   ratio {all_w_rate / all_s_rate:.2f}x
     (left-turn breakdown follows)
 
@@ -141,24 +151,25 @@ def main():
     winter {c['winter_left']}   summer {c['summer_left']}
     rate ratio {c['ratio']:.2f}x   95% CI [{c['lo']:.2f}, {c['hi']:.2f}]
 
-  CONTROL HOUR  ({fh(C.CONTROL_HOUR)}, light in both seasons — no effect expected)
-    left-turn ratio {ctrl['left_ratio']:.2f}x""" if ctrl else "    no data")
+  COMPARISON HOUR  ({fh(C.COMPARISON_HOUR)}, light in both seasons — no effect expected)
+    left-turn ratio {comp['left_ratio']:.2f}x""" if comp else "    no data")
 
+    h0 = C.CONTRAST_HOURS[0]   # first contrast hour, for the "rates not shares" line
     print(f"""
   CHECKS
     dry pavement only     {dark['dry_only']['diff_pp']:+.1f} pp  p={dark['dry_only']['p']:.6f} {stars(dark['dry_only']['p'])}
     right-turn placebo    {dark['placebo']['right']['diff_pp']:+.1f} pp  p={dark['placebo']['right']['p']:.4f} {stars(dark['placebo']['right']['p'])}
-    rates not shares      {fh(18)}: left {dark['by_hour'].get(18, {}).get('left_ratio', 0):.2f}x vs all {dark['by_hour'].get(18, {}).get('all_ratio', 0):.2f}x  ({fh(c['hours'][0])}-{fh(c['hours'][-1] + 1)} combined: {c['ratio']:.2f}x)
+    rates not shares      {fh(h0)}: left {dark['by_hour'].get(h0, {}).get('left_ratio', 0):.2f}x vs all {dark['by_hour'].get(h0, {}).get('all_ratio', 0):.2f}x  ({fh(c['hours'][0])}-{fh(c['hours'][-1] + 1)} combined: {c['ratio']:.2f}x)
     within intersection   OR {wi['odds_ratio']:.2f}  p={wi['p']:.6f} {stars(wi['p'])}  ({wi['agree']}/{wi['n_strata']} move predicted way)
     excluding impaired    {dark['sober_only']['diff_pp']:+.1f} pp  p={dark['sober_only']['p']:.6f} {stars(dark['sober_only']['p'])}
 
-  MECHANISM  (6-8pm left-turn crashes citing 'failed to yield while turning left')
+  MECHANISM  (6pm-8pm left-turn crashes citing 'failed to yield while turning left')
     flashing yellow / permissive by definition  {mech['calibration']['failed_to_yield_pct']:.0f}%
     all signals                                 {mech['overall']['failed_to_yield_pct']:.0f}%
-    6-8pm specifically                          {mech['contrast_hours']['failed_to_yield_pct']:.0f}%
-    disregarded signal at 6-8pm                 {mech['contrast_hours']['ran_red_pct']:.0f}%
+    6pm-8pm specifically                        {mech['contrast_hours']['failed_to_yield_pct']:.0f}%
+    disregarded signal at 6pm-8pm               {mech['contrast_hours']['ran_red_pct']:.0f}%
 
-  INTERSECTION CONTRAST  (6-8pm, ranked by rate gap)""")
+  INTERSECTION CONTRAST  (6pm-8pm, ranked by rate gap)""")
     for s in dark["intersection_contrast"]:
         sig_flag = " *" if s["significant"] else ""
         print("    %-35s  winter %2d  summer %2d  gap %+.1f  ratio %.2fx [%.2f-%.2f]%s" % (
@@ -189,7 +200,7 @@ def main():
     # left_lo              95% CI lower bound for left_ratio (Poisson)
     # left_hi              95% CI upper bound for left_ratio (Poisson)
     # all_ratio            winter/summer rate ratio for all crashes at this hour
-    # is_control           True for hour 17 (light in both seasons; no darkness contrast)
+    # is_comparison        True for the comparison hour (light in both seasons; no darkness contrast)
     #
     # The block below repeats for right-turn, right-angle and rear-end, and for
     # "other" (every intersection crash not coded as one of the four types above --
@@ -214,9 +225,9 @@ def main():
     ]).to_csv(C.OUTPUT_DIR / "hourly.csv", index=False)
 
     # intersections.csv — one row per intersection with at least 4 dark evening
-    # left-turn crashes (hours 18-21). Drawn from the mechanism analysis. Columns:
+    # left-turn crashes (hours 18-22, i.e. 6pm-11pm). Drawn from the mechanism analysis. Columns:
     #
-    # intersection         normalised street-name pair (e.g. PRESTON RD & SH121)
+    # intersection         normalized street-name pair (e.g. PRESTON RD & SH121)
     # crashes              dark evening left-turn crash count at this intersection
     # failed_to_yield_pct  % coded "failed to yield right of way - turning left"
     #                      (signature of a permissive left-turn phase)
@@ -226,12 +237,12 @@ def main():
 
     # intersection_contrast.csv — one row per intersection that clears
     # MIN_INTERSECTION_CONTRAST left-turn crashes in both winter and summer
-    # during contrast hours (6-8pm). All qualifying intersections included
+    # during contrast hours (6pm-8pm). All qualifying intersections included
     # regardless of direction. Ranked by winter-minus-summer rate gap. Columns:
     #
-    # intersection          normalised street-name pair
-    # winter_left           raw left-turn crash count during 6-8pm, winter months
-    # summer_left           raw left-turn crash count during 6-8pm, summer months
+    # intersection          normalized street-name pair
+    # winter_left           raw left-turn crash count during 6pm-8pm, winter months
+    # summer_left           raw left-turn crash count during 6pm-8pm, summer months
     # winter_rate           winter left-turn crashes per 1,000 winter days
     # summer_rate           summer left-turn crashes per 1,000 summer days
     # gap                   winter_rate - summer_rate (positive = winter higher)
@@ -249,7 +260,7 @@ def main():
     # the most total crashes, 2016-2025. Also shown as a table on the public report
     # page under "Signalized intersections with the most crashes overall". Columns:
     #
-    # intersection           normalised street-name pair
+    # intersection           normalized street-name pair
     # total_crashes          all crashes at this intersection, all hours, all seasons
     # left_turn_crashes      of which coded "ONE STRAIGHT-ONE LEFT TURN"
     # right_turn_crashes     of which coded "ONE STRAIGHT-ONE RIGHT TURN"
@@ -261,15 +272,16 @@ def main():
     pd.DataFrame(top).to_csv(C.OUTPUT_DIR / "top_intersections.csv", index=False)
 
     report.write_json(dark, mech)
-    page = report.render(dark, mech, funnel, top)
+    page = city_report().render(dark, mech, funnel, top)
 
-    written = [str(page.relative_to(C.ROOT)), "output/results.json",
-               "output/hourly.csv", "output/intersections.csv",
-               "output/intersection_contrast.csv", "output/top_intersections.csv"]
+    out = C.OUTPUT_DIR.relative_to(C.ROOT)
+    written = [str(page.relative_to(C.ROOT))] + [
+        f"{out}/{f}" for f in ["results.json", "hourly.csv", "intersections.csv",
+                               "intersection_contrast.csv", "top_intersections.csv"]]
     print("\n  WROTE")
     for w in written:
         print(f"    {w}")
-    print("\n  Preview the page:  cd docs && python -m http.server 8000\n")
+    print(f"\n  Preview the page:  cd {C.DOCS_DIR.relative_to(C.ROOT)} && python -m http.server 8000\n")
 
 
 if __name__ == "__main__":

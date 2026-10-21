@@ -11,7 +11,7 @@ import pandas as pd
 
 import config as C
 
-# Street-name suffix normalisation, so "MAIN STREET" and "MAIN ST" are one place.
+# Street-name suffix normalization, so "MAIN STREET" and "MAIN ST" are one place.
 _SUFFIX = {
     "ROAD": "RD", "STREET": "ST", "DRIVE": "DR", "AVENUE": "AVE", "LANE": "LN",
     "PARKWAY": "PKWY", "BOULEVARD": "BLVD", "COURT": "CT", "TRAIL": "TRL",
@@ -85,7 +85,7 @@ def load(path=None):
     """Return the analysis frame and a record of the filter funnel.
 
     The dataframe contains every intersection crash. Individual analyses narrow further
-    (e.g. to signalised intersections) from this common base.
+    (e.g. to signalized intersections) from this common base.
     """
     path = path or C.CRASH_FILE
     raw = pd.read_csv(path, dtype=str, skiprows=_header_row(path), low_memory=False)
@@ -110,7 +110,7 @@ def load(path=None):
 
     # 1. crashes that belong to an intersection
     df = df[df["intersection_type"].isin(C.INTERSECTION_TYPES)]
-    funnel.append(("at or related to an intersection (signalised, stop-controlled, and other)", len(df)))
+    funnel.append(("at or related to an intersection (signalized, stop-controlled, and other)", len(df)))
 
     # 2. crashes attributable to a named intersection
     df = df[df["key"] != ""]

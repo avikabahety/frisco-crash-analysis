@@ -1,33 +1,28 @@
-"""Configuration for the Frisco crash analysis.
+"""Shared configuration for the crash analysis.
 
-Every tunable parameter lives here. Nothing else in the codebase hard-codes a
-threshold, a window, or a field name.
+Settings that are the same for every city live here; settings that differ by city
+live in cities/<city>_config.py. Between the two, every tunable parameter is in a
+config file. Nothing else in the codebase hard-codes a threshold, a window, or a
+field name.
 """
 
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 DATA_DIR = ROOT / "data"
-OUTPUT_DIR = ROOT / "output"
-DOCS_DIR = ROOT / "docs"
+OUTPUT_ROOT = ROOT / "output"      # each city writes to output/<city>/
+DOCS_ROOT = ROOT / "docs"          # each city's page goes to docs/<city>/index.html
 
-# ---------------------------------------------------------------- input files
-# TxDOT CRIS export: Query tool -> City = FRISCO -> crash-level Attribute List.
-# Large, regenerable, and therefore not committed (see .gitignore).
-CRASH_FILE = DATA_DIR / "2016-2026-07-13_cris_list.csv"
-
-# ------------------------------------------------------- reporting completeness
-# A crash enters CRIS only after an officer files a CR-3 and TxDOT processes it, so
-# the most recent months of any extract are incomplete. An extract
-# taken in July 2026 includes a near-complete Jan-Feb (winter) but only a partial,
-# under-reported May-Jul (summer). Analysis is therefore
-# truncated to complete calendar years. Move this forward when a newer extract is
-# pulled; Run `python check_completeness.py` to see where reporting has settled.
-ANALYSIS_END = "2025-12-31"
+# ------------------------------------------------------------------- city
+# Settings that differ by city are NOT here. They live in cities/<city>_config.py
+# and are loaded by src/city.py when a script is run with --city. Those fields are:
+#   CRASH_FILE, ANALYSIS_END, STREET_ALIASES, sunrise/sunset times,
+#   CONTRAST_HOURS, COMPARISON_HOUR, EVENING_HOURS, MIDDAY_HOURS, LATE_HOURS,
+#   CITY_NAME
 
 # ------------------------------------------------------------------- CRIS map
 # Confirmed against the Frisco export. CRIS field names vary by export version;
-# run `python analyze.py --inspect` to print the columns your file actually has.
+# run `python analyze.py --city <city> --inspect` to print the columns a file has.
 COLUMNS = {
     "crash_id": "Crash ID",
     "date": "Crash Date",
@@ -42,48 +37,15 @@ COLUMNS = {
     "intersection": "Intersection Related",
 }
 
-# ---------------------------------------------------------------- street aliases
-# Officers record the same physical road under either its route number or its local
-# name, so one intersection ends up split across two keys and each half is
-# undercounted. These are the same road:
-#
-#   FM2934  = Eldorado Pkwy      FM3537 = Main St
-#   FM2478  = Custer Rd          SH289  = Preston Rd
-#
-# Source: City of Frisco, Related Agencies / Streets
-# (https://www.friscotexas.gov/420/Related-Agencies)
-#
-# Canonicalised to the LOCAL name: "Eldorado Pkwy & Custer Rd" beats "FM2934 & FM2478".
-#
-# Deliberately NOT merged: Dallas Pkwy and Dallas North Tollway are different roads
-# (frontage road vs tollway mainlane).
-#
-# Run `python check_aliases.py` to look for further aliases: it flags any two street
-# names whose crashes sit on top of each other geographically.
-STREET_ALIASES = {
-    "FM2934": "ELDORADO PKWY",
-    "FM3537": "MAIN ST",
-    "FM2478": "CUSTER RD",
-    "SH289": "PRESTON RD",
-}
-
 # --------------------------------------------------------------------- filters
 # Crashes that belong to an intersection. NON INTERSECTION crashes are freeway
-# mainlane (0 of 12,162 had a cross street); DRIVEWAY ACCESS crashes are excluded.
+# crashes with no cross street; DRIVEWAY ACCESS crashes are excluded.
 INTERSECTION_TYPES = ["INTERSECTION", "INTERSECTION RELATED"]
 
 # Values that mean "no data" across CRIS text fields.
 NULL_VALUES = ["", "NOT REPORTED", "NAN", "NO DATA", "UNKNOWN"]
 
 # ------------------------------------------------------------- analysis windows
-# Frisco sunset: ~17:25 in December, ~20:35 in June. Hours 18-19 are therefore dark in
-# winter and light in summer, giving the darkness contrast. 17:00 is light in both
-# seasons and serves as a comparison hour with no contrast.
-CONTRAST_HOURS = [18, 19]
-CONTROL_HOUR = 17
-EVENING_HOURS = [18, 19, 20, 21, 22]
-MIDDAY_HOURS = [10, 11, 12, 13, 14, 15]
-
 WINTER_MONTHS = [11, 12, 1, 2]
 SUMMER_MONTHS = [5, 6, 7, 8]
 
@@ -106,5 +68,4 @@ TOP_N_INTERSECTIONS = 25
 
 # ------------------------------------------------------------------- reporting
 SITE_TITLE = "Left-turn crashes after dark"
-SITE_SUBTITLE = "Frisco, TX \u00b7 TxDOT CRIS crash records, 2016\u20132025"
 REPO_URL = "https://github.com/avikabahety/frisco-crash-analysis"

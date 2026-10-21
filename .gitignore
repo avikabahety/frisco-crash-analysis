@@ -1,6 +1,6 @@
 # The CRIS export is large and regenerable from TxDOT. Do not commit it.
-data/*.csv
-!data/signal_installations.csv
+data/**/*.csv
+!data/*/signal_installations.csv
 
 # Generated on each run
 output/
