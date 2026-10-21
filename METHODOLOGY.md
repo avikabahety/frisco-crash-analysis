@@ -129,8 +129,12 @@ pooled test.
 **3. Dry pavement only.** Restricted to crashes where `Surface Condition` = DRY. The
 proportion test is re-run on this subset.
 
-**4. Right-turn comparison.** The same dark/daylight proportion test run on right-turn
-crashes. No effect expected or found.
+**4. Other crash types.** Winter/summer rate ratios in the contrast hours (6pm–8pm)
+for left-turn, right-angle, rear-end and right-turn crashes. If darkness made all
+driving harder, every type would rise by a similar amount; left-turn crashes rise far
+more than the others. Rates are used rather than shares of the crash mix: shares add
+up to 100%, so a rising left-turn share forces the other types' shares down whatever
+the cause. Right-turn crashes are few, so their ratio is shown but not relied on.
 
 **5. Impaired drivers excluded.** Crashes where `Contributing Factors` contains an
 impairment code are dropped. The proportion test is re-run on the remainder.

@@ -144,102 +144,6 @@ def hour_rows(dark, transition_hours):
     return "\n".join(out)
 
 
-def chart_type_diff(dark):
-    """Difference in crash-type share (winter% − summer%) by hour.
-
-    Four lines: left-turn (amber), right-turn (sky), angle (green), rear-end (red).
-    A horizontal zero line is the reference. The left-turn line rising above zero
-    in the dark band — while other types stay near zero — is the key visual.
-    """
-    hours = sorted(dark["by_hour"].keys())
-    if not hours:
-        return ""
-    lo, hi = min(hours), max(hours)
-    W, H = 720, 300
-    L, R, T, B = 68, 20, 48, 64
-    pw, ph = W - L - R, H - T - B
-    span = max(hi - lo, 1)
-
-    all_vals = [dark["by_hour"][h][f"{t}_diff_pp"]
-                for h in hours
-                for t in ("left", "right", "angle", "rear")]
-    y_max = max(max(all_vals), 1)
-    y_min = min(min(all_vals), -1)
-    y_range = y_max - y_min
-
-    def x(h):
-        return L + (h - lo) / span * pw
-
-    def y(v):
-        return T + ph - (v - y_min) / y_range * ph
-
-    # Dark band (evening: winter dark, summer light)
-    x0 = x(max(C.WINTER_SUNSET, lo))
-    x1 = x(min(C.SUMMER_SUNSET, hi))
-    mx0 = x(max(C.SUMMER_SUNRISE, lo))
-    mx1 = x(min(C.WINTER_SUNRISE, hi))
-
-    types = [
-        ("left",  "var(--amber)", "left-turn"),
-        ("right", "var(--sky)",   "right-turn"),
-        ("angle", "var(--green)", "right-angle"),
-        ("rear",  "var(--red)",   "rear-end"),
-    ]
-
-    def path(field):
-        pts = [f"{x(h):.1f},{y(dark['by_hour'][h][field]):.1f}" for h in hours]
-        return "M" + " L".join(pts)
-
-    lines = "".join(
-        f'<path d="{path(f"{t}_diff_pp")}" fill="none" stroke="{col}" '
-        f'stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>'
-        for t, col, _ in types)
-
-    dots = "".join(
-        f'<circle cx="{x(h):.1f}" cy="{y(dark["by_hour"][h][f"{t}_diff_pp"]):.1f}" '
-        f'r="3" fill="{col}"/>'
-        for t, col, _ in types
-        for h in hours)
-
-    ticks = "".join(
-        f'<text x="{x(h):.1f}" y="{H - B + 18}" class="ax" text-anchor="middle">'
-        f'{h % 12 or 12}{"am" if h < 12 else "pm"}</text>' for h in hours)
-
-    # Y axis gridlines: zero line prominent, one positive and one negative tick
-    grid_vals = [round(y_min / 2), 0, round(y_max / 2)]
-    grid_parts = []
-    for v in grid_vals:
-        yv = y(v)
-        line_attr = 'class="grid"' if v != 0 else 'stroke="#4A5E6E" stroke-width="1.5"'
-        sign = "+" if v > 0 else ""
-        grid_parts.append(
-            f'<line x1="{L}" y1="{yv:.1f}" x2="{W - R}" y2="{yv:.1f}" {line_attr}/>'
-            f'<text x="{L - 8}" y="{yv + 4:.1f}" class="ax" text-anchor="end">'
-            f'{sign}{v:.0f}</text>'
-        )
-    grid = "".join(grid_parts)
-
-    key = "".join(
-        f'<span><i style="background:{col}"></i>{label}</span>'
-        for _, col, label in types)
-
-    return f'''<svg viewBox="0 0 {W} {H}" class="chart" role="img"
-   aria-label="Crash type mix difference, winter minus summer by hour">
-  <text x="{L}" y="18" class="title">Crash-type mix: winter minus summer (percentage points)</text>
-  <rect x="{mx0:.1f}" y="{T}" width="{max(mx1 - mx0, 0):.1f}" height="{ph}" class="band"/>
-  <rect x="{x0:.1f}" y="{T}" width="{max(x1 - x0, 0):.1f}" height="{ph}" class="band"/>
-  <text x="{(x0 + x1) / 2:.1f}" y="{T + ph - 18:.1f}" class="bandlab" text-anchor="middle">dark in winter,</text>
-  <text x="{(x0 + x1) / 2:.1f}" y="{T + ph - 6:.1f}" class="bandlab" text-anchor="middle">light in summer</text>
-  {grid}
-  {lines}
-  {dots}
-  {ticks}
-  <text transform="translate({L - 42},{T + ph / 2:.1f}) rotate(-90)" text-anchor="middle" class="axtitle">pp difference</text>
-  <text x="{L + pw / 2:.1f}" y="{H - 14}" class="axtitle" text-anchor="middle">Hour of day</text>
-</svg>
-<div class="key" style="padding-top:6px">{key}</div>'''
-
-
 def chart_type_ratio(dark):
     """Winter/summer rate ratio by hour, one line per crash type.
 
@@ -275,7 +179,11 @@ def chart_type_ratio(dark):
     all_vals = [dark["by_hour"][h][f"{t}_ratio"]
                 for h in hours for t, _, _ in types
                 if dark["by_hour"][h][f"{t}_ratio"] == dark["by_hour"][h][f"{t}_ratio"]]
-    y_max = max(max(all_vals), 1) * 1.08
+    # Top of the y-axis: the next whole multiple above the highest ratio (at least
+    # 2x), so every gridline label sits inside the plot and the lines never run
+    # above the last label.
+    top = max(2, int(-(-max(all_vals) * 1.05 // 1)))
+    y_max = top
     y_min = 0
 
     def x(h):
@@ -327,7 +235,7 @@ def chart_type_ratio(dark):
         f'<text x="{x(h):.1f}" y="{H - B + 18}" class="ax" text-anchor="middle">'
         f'{h % 12 or 12}{"am" if h < 12 else "pm"}</text>' for h in hours)
 
-    grid_vals = sorted({0, 1, round(y_max)} | ({2} if y_max > 2 else set()))
+    grid_vals = list(range(0, top + 1))
     grid_parts = []
     for v in grid_vals:
         yv = y(v)

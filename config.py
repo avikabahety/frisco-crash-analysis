@@ -49,6 +49,13 @@ NULL_VALUES = ["", "NOT REPORTED", "NAN", "NO DATA", "UNKNOWN"]
 WINTER_MONTHS = [11, 12, 1, 2]
 SUMMER_MONTHS = [5, 6, 7, 8]
 
+# Hours shown on the results page (hour charts, hour table) and summed for the
+# "full day" figure: 6:00am-10:59pm, the same for every city.
+DAY_HOURS = list(range(6, 23))
+# An hour is left out of the charts and hour table if either season has fewer
+# crashes than this at that hour (too few for a stable rate).
+MIN_HOUR_CRASHES = 20
+
 # Minimum crashes in a cell before a comparison is reported.
 MIN_CELL = 25
 # Minimum dark and daylight crashes at one intersection to enter the stratified test.

@@ -51,10 +51,10 @@ def darkness(df):
     out["season_days"] = {"winter": win_days, "summer": sum_days}
 
     hours = {}
-    for h in range(5, 23):
+    for h in C.DAY_HOURS:
         w = sig[sig["winter"] & (sig["hour"] == h)]
         s = sig[sig["summer"] & (sig["hour"] == h)]
-        if len(w) < 20 or len(s) < 20:
+        if len(w) < C.MIN_HOUR_CRASHES or len(s) < C.MIN_HOUR_CRASHES:
             continue
         lt_ratio, lo, hi = stats.rate_ratio(
             int(w["is_left"].sum()), win_days, int(s["is_left"].sum()), sum_days)
