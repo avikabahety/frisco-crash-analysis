@@ -37,7 +37,7 @@ ANALYSIS_END = "2025-12-31"
 #     another name; SH5's local name changes along its length.
 #   - Dallas N Tollway vs Dallas Pkwy: different roads (tollway vs frontage), as in
 #     Frisco.
-# N/S DALLAS PKWY: the prefix does not reliably mark a side, so a Dallas Pkwy
+# N/S DALLAS PKWY: the prefix does not reliably mark the frontage side, so a Dallas Pkwy
 # interchange is one intersection, as in Frisco.
 STREET_ALIASES = {
     "SH289": "PRESTON RD",

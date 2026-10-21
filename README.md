@@ -1,10 +1,11 @@
 # Left-turn crashes after dark
 
 This analysis compares winter evening crashes at signalized intersections against
-summer evening crashes at the same clock hours. In Frisco, TX, left-turn crashes drive
-a disproportionate share of the difference. Left-turn crashes are roughly twice as many
-between 6pm and 8pm in winter months as in summer months, adjusted for number of days in
-each season. At 4pm, daylight in both seasons, that difference is absent.
+summer evening crashes at the same clock hours. In Frisco and Plano, TX, left-turn
+crashes drive a disproportionate share of the difference. Left-turn crashes are
+roughly twice as many between 6pm and 8pm in winter months as in summer months,
+adjusted for number of days in each season. At 4pm, daylight in both seasons, that
+difference is absent.
 
 The same analysis is being applied to other Collin County cities. Each city has its
 own results page.
@@ -12,6 +13,7 @@ own results page.
 | City | Results |
 |---|---|
 | Frisco, TX | [Full results →](https://avikabahety.github.io/frisco-crash-analysis/frisco/) |
+| Plano, TX | [Full results →](https://avikabahety.github.io/frisco-crash-analysis/plano/) |
 
 ---
 
@@ -55,9 +57,12 @@ config.py               shared settings: CRIS column map, filters, thresholds, s
 cities/
   frisco_config.py      Frisco settings: data file, cutoff date, street aliases, sunset hours
   frisco_report.py      Frisco results page text
+  plano_config.py       Plano settings, as above
+  plano_report.py       Plano results page text
 analyze.py              entry point — runs the analyses for one city, writes every artifact
-check_aliases.py        verifies street-name canonicalization against the data
-check_completeness.py   measures CRIS reporting lag, to set the cutoff date
+check_completeness.py   city check: measures CRIS reporting lag, to set the cutoff date
+check_setup.py          city check: sets analysis hours from recorded light; shows field coding
+check_aliases.py        city check: finds street names recorded under more than one name
 compare_outputs.py      maintainer check: Frisco run vs. saved baseline
 src/city.py             loads the selected city's settings and page text
 src/data.py             load, clean, filter. one definition of the study population
@@ -74,12 +79,22 @@ tests/baseline/frisco/  reference outputs used by compare_outputs.py
 
 1. Export the city's CRIS data to `data/<city>/` (see [data/README.md](data/README.md)).
 2. Create `cities/<city>_config.py` with every setting listed in `REQUIRED` in
-   `src/city.py`. `cities/frisco_config.py` is a starting point; the data file,
-   cutoff date and street aliases must be set for the new city. Analysis hours are
-   set from the city's sunset times before its results are looked at.
-3. Create `cities/<city>_report.py`, the page text, written for that city's
+   `src/city.py`, using `cities/frisco_config.py` as a starting point.
+3. Check the data and set the city's values:
+   - `python analyze.py --city <city> --inspect`: the export has every column the
+     analysis needs
+   - `python check_completeness.py --city <city>`: sets the cutoff date
+     (`ANALYSIS_END`)
+   - `python check_setup.py --city <city>`: sets the analysis hours from recorded
+     light conditions, and checks how crash fields are coded
+   - `python check_aliases.py --city <city>`: finds street names recorded under more
+     than one name; confirm each on the crash locations before adding it to
+     `STREET_ALIASES`
+4. Commit the config **before** running the analysis, so its settings are fixed
+   before the result is seen.
+5. Create `cities/<city>_report.py`, the page text, written for that city's
    results. Charts, tables and the page frame come from `src/report.py`.
-4. Run `python analyze.py --city <city>`.
+6. Run `python analyze.py --city <city>`.
 
 The method, thresholds and seasons in `config.py` are shared, so every city is
 analyzed the same way.
