@@ -15,7 +15,7 @@ import config as C
 # Every city file must define all of these.
 REQUIRED = ["CRASH_FILE", "ANALYSIS_END", "STREET_ALIASES",
             "WINTER_SUNSET", "SUMMER_SUNSET", "WINTER_SUNRISE", "SUMMER_SUNRISE",
-            "CONTRAST_HOURS", "COMPARISON_HOUR", "EVENING_HOURS", "MIDDAY_HOURS",
+            "CONTRAST_HOURS", "COMPARISON_HOUR", "EVENING_HOURS", "MIDDAY_HOURS", "LATE_HOURS",
             "CITY_NAME"]
 
 

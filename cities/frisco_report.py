@@ -173,10 +173,12 @@ def render(dark, mech, funnel, top):
     6pm to 8pm, and briefly in the early morning before 7am. The evening window is the
     one this analysis tests; the morning window is shorter and has too few crashes for
     a reliable comparison.</p>
-    <p>Outside those windows winter and summer left-turn crashes track closely &mdash;
-    at midday both seasons are light, after 9pm both are dark. A seasonal factor
-    unrelated to light &mdash; school-term traffic, holiday driving, winter road
-    conditions &mdash; would be expected to affect those hours too. It does not.</p>
+    <p>At midday, when both seasons are light, winter and summer left-turn crash rates
+    track closely ({dark['same_light']['midday']['ratio']:.2f}&times;). After 9pm, when
+    both are dark, winter runs lower than summer
+    ({dark['same_light']['late']['ratio']:.2f}&times;). A seasonal factor that raises
+    winter evening crashes, such as school-term traffic or holiday driving, would be
+    expected to show up in those hours too; it does not.</p>
     <div class="figure">
       {R.chart(dark)}
       <div class="key">
@@ -249,17 +251,17 @@ def render(dark, mech, funnel, top):
         crashes where the officer recorded a dry road surface (from the CRIS surface
         condition field) leaves the difference unchanged, so wet roads do not explain
         it.
-        <span class="det">all surfaces: {dark['headline']['diff_pp']:+.1f}&nbsp;pp
-        &middot; dry pavement only: {dark['dry_only']['diff_pp']:+.1f}&nbsp;pp</span>
+        <span class="det">all surfaces: {R.signed_pp(dark['headline']['diff_pp'])}&nbsp;pp
+        &middot; dry pavement only: {R.signed_pp(dark['dry_only']['diff_pp'])}&nbsp;pp</span>
       </div></li>
       <li><span class="mark">&mdash;</span><div>
         <b>Right-turn comparison.</b> If night driving were generally more difficult,
         other turning movements would shift similarly. Right-turn crashes show no
         change in the same window, making a general night-driving explanation unlikely.
-        <span class="det">left-turn {dark['placebo']['left']['diff_pp']:+.1f}&nbsp;pp
-        &middot; right-turn {dark['placebo']['right']['diff_pp']:+.1f}&nbsp;pp
-        &middot; right-angle {dark['placebo']['angle']['diff_pp']:+.1f}&nbsp;pp
-        &middot; rear-end {dark['placebo']['rear']['diff_pp']:+.1f}&nbsp;pp</span>
+        <span class="det">left-turn {R.signed_pp(dark['placebo']['left']['diff_pp'])}&nbsp;pp
+        &middot; right-turn {R.signed_pp(dark['placebo']['right']['diff_pp'])}&nbsp;pp
+        &middot; right-angle {R.signed_pp(dark['placebo']['angle']['diff_pp'])}&nbsp;pp
+        &middot; rear-end {R.signed_pp(dark['placebo']['rear']['diff_pp'])}&nbsp;pp</span>
       </div></li>
       <li><span class="mark">&mdash;</span><div>
         <b>Rates, not counts.</b> Left-turn crashes are compared as rates per calendar
@@ -274,7 +276,7 @@ def render(dark, mech, funnel, top):
     (Mantel&ndash;Haenszel OR&nbsp;{wi['odds_ratio']:.2f} across {wi['n_strata']}
     intersections, {wi['agree']}/{wi['n_strata']} moving the predicted way) and
     exclusion of impaired-driver crashes
-    ({dark['sober_only']['diff_pp']:+.1f}&nbsp;pp, impairment recorded in
+    ({R.signed_pp(dark['sober_only']['diff_pp'])}&nbsp;pp, impairment recorded in
     {dark['sober_only']['impaired_pct']:.1f}% of crashes in these hours).</p>
   </section>
 
@@ -282,7 +284,7 @@ def render(dark, mech, funnel, top):
     <h2><span class="eye">where to look</span>Intersections worth a closer look</h2>
     <p>These intersections show the largest observed gap between winter and summer
     left-turn crashes during the 6pm&ndash;8pm window. Two of these intersections are on
-    SH121 and are likely managed by the City of Plano. The remaining two intersections
+    SH121 and may be operated by another agency. The remaining two intersections
     represent a starting point for Frisco&rsquo;s evaluation of whether any
     countermeasure is appropriate to reduce winter left-turn crashes.</p>
     <table class="tab">
@@ -307,10 +309,11 @@ def render(dark, mech, funnel, top):
     <div class="notclaim">
       <h3>These bound the interpretation of everything above.</h3>
       <ul>
-        <li><b>Exposure is unknown.</b> The number of left turns attempted after dark
-        is not available. Traffic volumes are lower at night, so the risk per turn
-        attempted is likely higher than these figures indicate, making the estimates
-        conservative.</li>
+        <li><b>Exposure is unknown.</b> The number of left turns attempted at these
+        hours in each season is not available. If winter evenings carry less traffic
+        than summer evenings, the risk per turn is higher than these figures indicate;
+        if winter evenings carry more traffic than summer evenings, then the risk is
+        lower.</li>
         <li><b>Reportable crashes only.</b> CRIS contains crashes for which an officer
         filed a CR-3: injury, death, or $1,000+ in property damage. Minor crashes and
         those without police response are not included.</li>

@@ -54,6 +54,9 @@ CONTRAST_HOURS = [18, 19]
 COMPARISON_HOUR = 16
 EVENING_HOURS = [18, 19, 20, 21, 22]
 MIDDAY_HOURS = [10, 11, 12, 13, 14, 15]
+# Late evening, dark in both seasons (9:00pm-10:59pm). With MIDDAY_HOURS (light in both
+# seasons), checks whether winter and summer differ at hours where the light does not.
+LATE_HOURS = [21, 22]
 
 # Frisco sunset and sunrise in decimal hours (17.4 = 5:24pm), used to shade the
 # darkness bands on the results page charts and to label each hour's light

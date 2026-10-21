@@ -187,6 +187,18 @@ def darkness(df):
                           "diff_pp": diff_c, "p": p_c}
     out["placebo"] = placebo
 
+    # ---- same light in both seasons ----------------------------------------
+    # Left-turn winter/summer rate ratio at hours where light does NOT differ between
+    # seasons: midday (light in both) and late evening (dark in both). A seasonal
+    # factor unrelated to light would be expected to move these too.
+    out["same_light"] = {}
+    for label, hrs in [("midday", C.MIDDAY_HOURS), ("late", C.LATE_HOURS)]:
+        w_n = int(sig[sig["winter"] & sig["hour"].isin(hrs)]["is_left"].sum())
+        s_n = int(sig[sig["summer"] & sig["hour"].isin(hrs)]["is_left"].sum())
+        r, r_lo, r_hi = stats.rate_ratio(w_n, win_days, s_n, sum_days)
+        out["same_light"][label] = {"hours": list(hrs), "winter_left": w_n,
+                                    "summer_left": s_n, "ratio": r, "lo": r_lo, "hi": r_hi}
+
     out["span"] = {"start_year": int(df["date"].min().year),
                    "end_year": int(df["date"].max().year),
                    "start": df["date"].min().date().isoformat(),
