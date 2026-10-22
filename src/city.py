@@ -48,3 +48,16 @@ def city_report():
         raise SystemExit(f"No results page for '{C.CITY}': "
                          f"create cities/{C.CITY}_report.py (see cities/frisco_report.py)")
     return importlib.import_module(f"cities.{C.CITY}_report")
+
+
+def cities_with_pages():
+    """(slug, CITY_NAME) for every city with a page file and a generated results
+    page in docs/<city>/, in alphabetical order. Used for the city index page."""
+    out = []
+    for slug in available_cities():
+        if not (C.ROOT / "cities" / f"{slug}_report.py").exists():
+            continue
+        if not (C.DOCS_ROOT / slug / "index.html").exists():
+            continue
+        out.append((slug, importlib.import_module(f"cities.{slug}_config").CITY_NAME))
+    return out

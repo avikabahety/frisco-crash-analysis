@@ -72,6 +72,7 @@ src/report.py           shared page parts: charts, tables, styling, header, foot
 data/<city>/            CRIS export (not committed to GitHub) and city reference files
 output/<city>/          generated — results.json and CSVs (not committed to GitHub)
 docs/<city>/            generated — results page, served by GitHub Pages
+docs/index.html         generated — city index page linking each city's results
 tests/baseline/frisco/  reference outputs used by compare_outputs.py
 ```
 

@@ -273,9 +273,10 @@ def main():
 
     report.write_json(dark, mech)
     page = city_report().render(dark, mech, funnel, top)
+    index = report.write_index()
 
     out = C.OUTPUT_DIR.relative_to(C.ROOT)
-    written = [str(page.relative_to(C.ROOT))] + [
+    written = [str(page.relative_to(C.ROOT)), str(index.relative_to(C.ROOT))] + [
         f"{out}/{f}" for f in ["results.json", "hourly.csv", "intersections.csv",
                                "intersection_contrast.csv", "top_intersections.csv"]]
     print("\n  WROTE")

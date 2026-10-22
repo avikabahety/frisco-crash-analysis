@@ -346,15 +346,23 @@ def funnel_rows(funnel):
     return "\n".join(rows)
 
 
-def page(body, description, span):
+def page(body, description, span, title=None, tag=None, affiliation=None):
     """Wrap a city's page text in the shared frame: document head and styling, top
-    bar, and footer. `body` runs from the hero header through </main>."""
+    bar, and footer. `body` runs from the hero header through </main>.
+
+    title, tag and affiliation default to the selected city (browser-tab title, the
+    top bar's left-hand label, and who the footer says the analysis is not
+    affiliated with). The city index page passes its own.
+    """
+    title = title or f"{C.SITE_TITLE} &mdash; {C.CITY_NAME}, TX"
+    tag = tag or f"{C.CITY_NAME}, TX &middot; signalized intersections"
+    affiliation = affiliation or f"the City of {C.CITY_NAME}"
     head = f'''<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{C.SITE_TITLE} &mdash; {C.CITY_NAME}, TX</title>
+<title>{title}</title>
 <meta name="description" content="{description}">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -482,14 +490,14 @@ def page(body, description, span):
 <body>
 
 <div class="top"><div class="wrap">
-  <span class="tag">{C.CITY_NAME}, TX &middot; signalized intersections</span>
+  <span class="tag">{tag}</span>
   <span class="src">Based on TxDOT CRIS &middot; {span}</span>
 </div></div>
 
 '''
     foot = f'''<footer><div class="wrap">
   <p>An independent analysis of public TxDOT CRIS crash records. Not affiliated with
-  the City of {C.CITY_NAME} or TxDOT. Any errors are the author&rsquo;s.</p>
+  {affiliation} or TxDOT. Any errors are the author&rsquo;s.</p>
   <p style="margin-top:14px"><a href="{C.REPO_URL}">Repository</a> &middot;
   <a href="https://cris.dot.state.tx.us/public/Query/app/home">CRIS data source</a></p>
 </div></footer>
@@ -503,6 +511,52 @@ def write_page(html, path=None):
     """Write the results page to docs/<city>/index.html."""
     path = path or (C.DOCS_DIR / "index.html")
     path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(html, encoding="utf-8")
+    return path
+
+
+def write_index(path=None):
+    """Write the city index page, docs/index.html: one row per city that has a
+    published results page, linking to it. Rebuilt by analyze.py after every run."""
+    from src.city import cities_with_pages
+    rows, starts, ends = [], [], []
+    for slug, name in cities_with_pages():
+        rows.append(f'''      <tr><td>{name}, TX</td>
+        <td><a href="{slug}/">Full results &rarr;</a></td></tr>''')
+        res = C.OUTPUT_ROOT / slug / "results.json"
+        if res.exists():
+            sp = json.loads(res.read_text(encoding="utf-8"))["darkness"]["span"]
+            starts.append(sp["start_year"]); ends.append(sp["end_year"])
+    span = f"{min(starts)}&ndash;{max(ends)}" if starts else ""
+    intro = ("This analysis compares winter evening crashes at signalized intersections "
+             "against summer evening crashes at the same clock hours. Left-turn crashes "
+             "drive a disproportionate share of the difference. Each city&rsquo;s results "
+             "are on its own page.")
+    rows_html = "\n".join(rows)
+    body = f'''<header class="hero"><div class="wrap">
+  <h1>{C.SITE_TITLE}</h1>
+  <p class="sub">{intro}</p>
+</div></header>
+
+<main class="wrap">
+
+  <section class="sec">
+    <table class="tab">
+      <thead><tr><th>City</th><th style="text-align:left">Results</th></tr></thead>
+      <tbody>
+{rows_html}
+      </tbody>
+    </table>
+    <p><a href="{C.REPO_URL}" style="color:#B87A18;font-weight:600;">Code, data and
+    full method &rarr;</a></p>
+  </section>
+
+</main>
+
+'''
+    html = page(body, intro.replace("&rsquo;", "'"), span, title=C.SITE_TITLE,
+                tag="Signalized intersections", affiliation="any city")
+    path = path or (C.DOCS_ROOT / "index.html")
     path.write_text(html, encoding="utf-8")
     return path
 
